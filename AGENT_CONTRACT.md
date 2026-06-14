@@ -26,8 +26,20 @@ Each side reads the other's. Append newest-first.
    file**. Re-runs refresh existing jobs in place (dedupe on `url`, else company+title).
    Nothing is ever lost or duplicated.
 
-You may instead POST each object to `http://localhost:3000/api/jobs` (same path),
-but JSONL is simplest for a batch run.
+**THE agent path — APPEND ONLY (do NOT run `bun run import`):** append your run's JSONL
+(jobs + `__source` lines) to `data/incoming.jsonl`. That's plain bytes over the mount —
+the sandbox never touches SQLite. A host launchd watcher (`com.orion.import`,
+`WatchPaths` on that file) auto-runs the import ON THE HOST, so the macOS host is the
+**single DB writer** (no cross-kernel WAL hazard — the sandbox can't reach host
+`localhost:3000`, and sandbox-side DB writes risk `-shm`/mmap corruption). Results land
+in `data/last_run.json` (same shape) for you to self-check. Write whole newline-
+terminated lines.
+
+**Other ingestion paths (not for the sandbox agent):** `POST /api/ingest` (array of
+records → run summary) and `POST /api/jobs` (single job) exist for host-side or
+networked callers. `PRAGMA busy_timeout=5000` is set. The host watcher uses the same
+shared `ingestBatch` path, so scoring/health/dedupe are identical however a record
+arrives.
 
 ---
 

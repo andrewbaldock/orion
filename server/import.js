@@ -7,8 +7,7 @@
 // Run manually:   bun run import
 // Or POST the same payloads to /api/jobs while the server is running.
 
-import { recordSource } from "./db.js";
-import { ingest } from "./ingest.js";
+import { ingestBatch } from "./ingest.js";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -16,47 +15,39 @@ const INCOMING = process.env.INCOMING_PATH || "./data/incoming.jsonl";
 
 export async function importIncoming(path = INCOMING) {
   const summaryPath = join(dirname(path), "last_run.json");
-  if (!existsSync(path)) {
-    console.log("No incoming file at", path);
-    const empty = { ran_at: new Date().toISOString(), imported: 0, created: 0, updated: 0, sources: 0, skipped: 0, errors: [] };
-    writeFileSync(summaryPath, JSON.stringify(empty, null, 2));
-    return empty;
+  const noop = { ran_at: new Date().toISOString(), imported: 0, created: 0, updated: 0, sources: 0, skipped: 0, errors: [] };
+
+  // Nothing to do. Do NOT overwrite last_run.json — the WatchPaths watcher re-fires
+  // on the just-truncated file, and clobbering the real summary with zeros would
+  // confuse the agent's self-check. Preserve the last meaningful run.
+  if (!existsSync(path)) { console.log("No incoming file at", path); return noop; }
+
+  // Parse JSONL → records, tracking parse failures as skips.
+  const rawLines = readFileSync(path, "utf8").split("\n").filter((l) => l.trim());
+  if (rawLines.length === 0) { console.log("Incoming file empty — nothing to import."); return noop; }
+  const records = [];
+  const parseErrors = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    try { records.push(JSON.parse(rawLines[i])); }
+    catch { parseErrors.push({ line: i + 1, error: "invalid JSON", snippet: rawLines[i].slice(0, 80) }); }
   }
-  const lines = readFileSync(path, "utf8").split("\n").filter((l) => l.trim());
-  let created = 0, updated = 0, sources = 0, skipped = 0;
-  const errors = [];
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    let rec;
-    try { rec = JSON.parse(line); }
-    catch { skipped++; errors.push({ line: i + 1, error: "invalid JSON", snippet: line.slice(0, 80) }); continue; }
 
-    // Source-discovery records: {"__source":{"name","url"}}
-    if (rec.__source) { recordSource(rec.__source.name, rec.__source.url); sources++; continue; }
-
-    // A real job needs at least a title or a url to be worth keeping.
-    if (!rec.title && !rec.url) { skipped++; errors.push({ line: i + 1, error: "no title or url", snippet: line.slice(0, 80) }); continue; }
-
-    // ingest() scores + (optionally) assesses employer health, then upserts
-    // losslessly. If the agent already supplied health_score, the Claude call
-    // is skipped — so the routine can pre-rate employers to save tokens.
-    try {
-      const { created: isNew } = await ingest(rec);
-      isNew ? created++ : updated++;
-    } catch (e) {
-      skipped++; errors.push({ line: i + 1, error: String(e?.message || e), snippet: (rec.title || rec.url || "").slice(0, 80) });
-    }
-  }
+  // Shared ingest path (also used by POST /api/ingest).
+  const res = await ingestBatch(records);
   writeFileSync(path, ""); // truncate after successful import (lossless: rows live in the DB)
 
-  // Machine-readable run summary the agent consumes to self-check (shape agreed
-  // in AGENT_LOG.md). Always written, even on an empty/error run.
-  const summary = { ran_at: new Date().toISOString(), imported: lines.length, created, updated, sources, skipped, errors };
+  const summary = {
+    ran_at: new Date().toISOString(),
+    imported: rawLines.length,
+    created: res.created, updated: res.updated, sources: res.sources,
+    skipped: res.skipped + parseErrors.length,
+    errors: [...parseErrors, ...res.errors],
+  };
   writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
 
   console.log(
-    `Imported ${lines.length} records → ${created} new, ${updated} refreshed, ` +
-    `${sources} sources, ${skipped} skipped${errors.length ? ` (${errors.length} errors)` : ""}.`
+    `Imported ${summary.imported} records → ${summary.created} new, ${summary.updated} refreshed, ` +
+    `${summary.sources} sources, ${summary.skipped} skipped${summary.errors.length ? ` (${summary.errors.length} errors)` : ""}.`
   );
   return summary;
 }

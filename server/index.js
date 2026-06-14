@@ -5,7 +5,7 @@ import {
 } from "./db.js";
 import { slurpUrl, parseJobFromHtml } from "./slurp.js";
 import { llmEnabled, extractJobWithLLM } from "./llm.js";
-import { ingest, lookupHealth, clearHealthCache } from "./ingest.js";
+import { ingest, ingestBatch, lookupHealth, clearHealthCache } from "./ingest.js";
 
 const PORT = Number(process.env.PORT || 3000);
 
@@ -56,6 +56,18 @@ const server = Bun.serve({
       if (pathname === "/api/jobs" && method === "POST") {
         const body = await req.json();
         return json(await ingest(body), 201);
+      }
+
+      // POST /api/ingest  -> batch ingest a whole agent run over HTTP, so the
+      // always-on host API is the SINGLE DB writer (no cross-kernel SQLite access
+      // from the sandbox). Body = an array of records, or { records: [...] };
+      // each is a job or a {"__source":{…}} row. Returns the run summary.
+      if (pathname === "/api/ingest" && method === "POST") {
+        const body = await req.json();
+        const records = Array.isArray(body) ? body : Array.isArray(body?.records) ? body.records : null;
+        if (!records) return json({ error: "expected an array of records or { records: [...] }" }, 400);
+        const res = await ingestBatch(records);
+        return json({ ran_at: new Date().toISOString(), ...res });
       }
 
       // POST /api/jobs/:id/health  -> recompute employer health for this job's company

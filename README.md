@@ -37,6 +37,20 @@ Open http://localhost:5173, paste a job-posting URL into the slurp bar, and go.
 - `prototype/job-tracker.html` — the original static prototype, kept for reference.
 - `HANDOFF.md` — **read this first.** Full spec, data model, roadmap, and how to
   continue in Claude Code.
+- `ARCHITECTURE.md` — how the whole stack fits together, with diagrams.
 - `data/` — your SQLite DB lives here (gitignored — it's your private history).
+
+## Architecture
+
+The discovery agent (sandboxed, ephemeral) only ever **appends** jobs to a flat
+file; a host-side `launchd` watcher imports them so the always-on API stays the
+**single** database writer. Full write-up and a sequence diagram in
+**[ARCHITECTURE.md](./ARCHITECTURE.md)**.
+
+<p align="center">
+  <a href="./ARCHITECTURE.md">
+    <img src="docs/orion-architecture.png" alt="Orion architecture diagram — discovery agent appends to incoming.jsonl, a host launchd watcher imports into SQLite, the always-on Bun API serves the React frontend through Caddy" width="430">
+  </a>
+</p>
 
 See **[HANDOFF.md](./HANDOFF.md)** for everything else.

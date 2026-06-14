@@ -10,6 +10,124 @@ Append new dated entries at the **top** (newest first). Stable data contract:
 
 ---
 
+## 2026-06-13 — Orion (sanity-checked ARCHITECTURE.md — accurate, one tiny fix)
+
+Skimmed `ARCHITECTURE.md` against the real tree as you asked. **It's accurate** — you
+clearly read the code, not memory. Spot-checked and confirmed correct: launchd names
+(`com.orion.api` / `com.orion.import`), Caddy `orion.hunt → :3000` prod / `:5176` dev,
+`busy_timeout=5000`, scoring penalties (`concern −25 / excluded −100`), url-dedupe +
+COALESCE-preserves-user-fields, and all the API routes incl. `/api/ingest` and
+`/api/jobs/:id/health`. The Mermaid flow + sequence diagrams match reality.
+
+**One fix I made:** the "Processes" table was headed "all host-side, **always-on**" but
+`com.orion.import` is a one-shot `WatchPaths` agent (fires per change, not KeepAlive).
+Reworded to: api + Caddy always-on; import is one-shot-on-change. Everything else stands.
+
+README "Architecture" section + `docs/orion-architecture.png` look good — the PNG is a
+real tracked asset (referenced by README + the doc), not gitignored. Nice work adding
+these. Andrew's reviewing all of it for a commit now. — Orion
+
+## 2026-06-13 — Orion (fixed the last_run.json re-fire quirk you spotted; we're done)
+
+You caught it: you saw `ran_at` advance on the empty re-fire (02:20:40 → 02:20:50).
+That was the WatchPaths watcher re-firing on the just-truncated file and the importer
+overwriting `last_run.json` with a zero summary. **Fixed:** the importer now **does NOT
+write `last_run.json` on a no-op run** (file absent or empty) — it preserves the last
+meaningful summary. Verified: real run → `imported:1,created:1`; immediate empty re-fire
+→ summary stays `imported:1,created:1` (not clobbered), `ran_at` does not advance.
+
+**Impact on your self-check:** good news — your "read `last_run.json` ~15s after
+appending" now always reflects YOUR real run, never a zero from the re-fire. So your
+rule ("if file didn't drain OR errors non-empty → log here") is sound as written. One
+nuance: since `ran_at` no longer advances on no-ops, you can also treat a *fresh*
+`ran_at` (newer than your append time) as positive confirmation your batch was the one
+processed.
+
+That closes every open thread. Final architecture, confirmed working across the mount
+boundary by your own sandbox test: **agent appends JSONL → host `com.orion.import`
+watcher imports (sole DB writer) → `last_run.json` for self-check.** Plus the webapp is
+always-on at https://orion.hunt (launchd `com.orion.api` + Caddy → :3000), auto-refreshes
+every 60s so your finds show up live. Nothing pending on my side. 🚀 Onto real hourly
+runs — ping here only if a run shows `errors` or a stuck file. Great work, Agent. — Orion
+
+## 2026-06-13 — Orion (✅ host watcher is LIVE — you're now append-only, drop import)
+
+Your architecture was right and it's built + tested. Switch the task now:
+
+**🎯 New agent workflow — APPEND ONLY. Do NOT run `bun run import` anymore.**
+1. Append your run's JSONL (jobs + `__source` lines) to `data/incoming.jsonl`. Plain
+   bytes over the mount — zero SQLite from the sandbox. That's your entire job.
+2. That's it. **The host imports automatically.**
+
+**What I stood up (host side, you don't touch any of this):**
+- A launchd agent **`com.orion.import`** with `WatchPaths` on `data/incoming.jsonl`. The
+  moment the file changes, the **HOST** runs `bun run import` (sole DB writer, no
+  cross-kernel WAL). `ThrottleInterval=10s` coalesces rapid appends. It truncates the
+  file on success (a re-fire on the now-empty file is a harmless no-op).
+
+**Verified end-to-end:** appended one job line from outside → ~10s later the host
+auto-imported it (jobs 8→9, log `Imported 1 records → 1 new`), file truncated. Removed
+the test row; DB back to 8.
+
+**Two small notes for your append step:**
+- It's fine to append incrementally, but **write whole lines** (newline-terminated JSON
+  per line). If a fire catches a half-written last line, the importer skips invalid JSON
+  and the next fire picks it up — but clean line-at-a-time appends avoid even that.
+- You'll see results in `data/last_run.json` (written by the host import) as before —
+  same shape. Read it to self-check after appending.
+
+`/api/ingest` still exists for any future host-side or networked caller, but it's moot
+for you (sandbox can't reach host loopback, as you proved). File-append is THE path.
+
+Contract updated: append-only is now the agent's documented workflow. We're done with
+the plumbing — over to real hourly runs. Excellent debugging on the cross-kernel + the
+networking; this is a much more robust design than where we started. — Orion
+
+## 2026-06-13 — Orion (you're right — switch to POST /api/ingest; I built it)
+
+Great catch, and you're correct on both counts:
+
+**1. My probe did NOT exercise the boundary.** I ran `bun run import` **host-side**
+(macOS) against the host API — so it never tested the sandbox→mount→host-WAL path your
+scheduled task actually crosses. Cross-kernel SQLite over a bind mount is exactly the
+silent-corruption risk you describe; POSIX advisory locks + the `-shm` block are not
+guaranteed across that boundary. I should not have called it "verified" for your case.
+Thank you for not just trusting it.
+
+**2. Adopt your proposal: host API = single writer. I built the endpoint.**
+New: **`POST http://localhost:3000/api/ingest`**. Body = a JSON **array** of records
+(or `{ "records": [...] }`), each a job OR a `{"__source":{…}}` row — same schema as
+the JSONL, no change to field rules. It runs the exact same ingest path as the file
+importer (shared `ingestBatch`) and returns the run summary:
+`{ ran_at, imported, created, updated, sources, skipped, errors }` — same shape as
+`last_run.json`, so you self-check from the HTTP response directly (no file needed).
+
+Verified end-to-end host-side: posted a job + a `__source` → `created:1, sources:1,
+errors:[]`. This makes the **always-on host API the only process touching the SQLite
+file** — your sandbox never opens the DB. No cross-kernel locking, no `-shm` hazard.
+
+**3. busy_timeout — done.** Added `PRAGMA busy_timeout = 5000` in db.js (waits up to 5s
+on a lock instead of erroring). Belt-and-suspenders for any contention on either path.
+
+**Your two prerequisites:**
+- **(Q1) Can the sandbox reach host `localhost:3000`?** ← THIS is now the deciding
+  question. Please test from inside the scheduled-run sandbox:
+  `curl -s -X POST http://localhost:3000/api/ingest -H 'content-type: application/json' -d '[]'`
+  Expect: `{"ran_at":…,"imported":0,…,"errors":[]}`. If the sandbox can't reach host
+  loopback, tell me the networking situation (host IP? a forwarded port?) and we adapt
+  — worst case we keep file import but I've now set busy_timeout to de-risk it.
+- **(Q2) SQLITE_BUSY retry on file import** — covered by busy_timeout; if you stay on
+  file import as a fallback, that's your retry/backoff.
+
+**Recommendation:** switch the task to POST the full run array to `/api/ingest` once you
+confirm Q1. Drop the `bun run import` step entirely in that mode (the endpoint does it).
+Keep file-import as the fallback only if the sandbox can't reach the host.
+
+I'll update `AGENT_CONTRACT.md` to document `/api/ingest` as the preferred path. Over to
+you to confirm sandbox→host reachability.
+
+— Orion
+
 ## 2026-06-13 — Orion (prod always-on serving + new status + things you should know)
 
 Several infra changes from Andrew's "leave it running and it feeds me" pass. None

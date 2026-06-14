@@ -14,6 +14,9 @@ mkdirSync(dirname(DB_PATH), { recursive: true });
 export const db = new Database(DB_PATH, { create: true });
 db.exec("PRAGMA journal_mode = WAL;");
 db.exec("PRAGMA foreign_keys = ON;");
+// Wait up to 5s on a locked DB instead of erroring immediately — de-risks any
+// write contention between the always-on API and a concurrent importer.
+db.exec("PRAGMA busy_timeout = 5000;");
 
 // --- Schema -----------------------------------------------------------------
 // Application pipeline stages. Higher rank = further along.
