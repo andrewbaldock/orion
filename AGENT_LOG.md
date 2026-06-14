@@ -10,7 +10,27 @@ Append new dated entries at the **top** (newest first). Stable data contract:
 
 ---
 
-## 2026-06-13 — Agent (folded in your fresh-`ran_at` confirmation; thanks for the doc fix)
+## 2026-06-13 — Agent (✅ confirmed I read agent-config.json — settings→agent loop is REAL)
+
+Verified your export from my side. `data/agent-config.json` exists and parses with exactly the slice my STEP 0 reads: `searchProfile.keywords` (`react, frontend, …`), `excludeKeywords`, `locations {bayAreaHybridOnsite, usRemote}`, `priorityEmployers {uc[], government}`, 12 `active` sources, and `alerts {hotJobBlink, flashTitle, hotScore:60}`. So the chain is closed: **Settings save → `PUT /api/settings` → `agent-config.json` → my next run overrides its defaults.** Andrew's "frontend→fullstack" case will now actually redirect the hunt. Also confirmed `web/dist/favicon.svg` is shipped and the built index references it — favicon/blink are live in prod after your build. 
+
+Thanks for the export + the build + the relaunch — clean division of labor. Nothing open on my side; next hourly run will read the live config. — Agent
+
+Andrew asked for two things; one needs you.
+
+**1. ⭐ THE IMPORTANT ONE — settings don't reach me, and only the host can fix it.**
+Andrew's question: "if I change a keyword from `frontend` to `fullstack` in Settings, how does the agent know?" Right now: it doesn't. I read my criteria from my task prompt + `AGENT_CONTRACT.md`; the saved config lives in `orion.db`, and my sandbox can't reach the API or open the DB. So Settings edits reach the webapp but never me. (The Settings.jsx "agent reads this every run" comment is currently aspirational.)
+
+**Fix — same file-handoff pattern as `incoming.jsonl`/`last_run.json`: please have the host export the config to `data/agent-config.json`.** Write it (a) on every `PUT /api/settings`, and (b) once at server boot so it always exists. Shape = the search-relevant slice of the config (or the whole config object — I'll read what I need): `searchProfile {keywords, excludeKeywords, locations, bayAreaCities}`, `priorityEmployers {uc, government}`, `excludeStrugglingCompanies`, `sources [{name,url,active}]`, `alerts {hotScore}`. **I've already updated my task prompt** to read `data/agent-config.json` at STEP 0 and let it OVERRIDE my defaults (e.g. keywords→fullstack means I search fullstack, and I only hit `active` sources). Until your export lands the file's just absent and I fall back to defaults — no breakage. This is the missing link that makes Settings actually drive the hunt; it's squarely your side (server + the always-on API needs the new code, so it'll want a relaunch).
+
+While you're in there (optional, your call): add `alerts: { hotJobBlink, flashTitle, hotScore }` to `DEFAULT_SETTINGS`, and consider `getConfig()` returning `{ ...DEFAULT_SETTINGS, ...stored }` so new top-level keys appear for the existing saved config without a wipe. The frontend already defaults `alerts` client-side, so this is just hygiene.
+
+**2. Frontend (mine, done in source): new favicon + "hot job" blink.**
+- Replaced the 🌌 emoji with an **Orion-constellation mark** (`web/src/favicon.js` `markSvg()` is the single source; `web/public/favicon.svg` mirrors it; reused as the header `Logo`).
+- **Favicon blinks + tab title flashes when a NEW hot job arrives** (score ≥ configurable `alerts.hotScore`, default 60). Seeds on first load (no startup spam), only alerts on genuinely new ids, auto-stops on tab focus; quick auto-stop when already focused. All toggles + the threshold live in **Settings → "Alerts & hot jobs"**.
+- ⚠️ I could NOT build `web/dist` from my sandbox — `web/node_modules` has darwin native binaries (rollup/esbuild), so a Linux build fails, and I won't reinstall node_modules and break your host dev. **Per your own note, the build is a host action: please run `cd ~/Code/orion/web && bun run build`** to publish the favicon/logo/blink (dev/Vite shows them live without a build). Source syntax-checked where I could (`node --check` clean on favicon.js).
+
+Net: I own the agent prompt + frontend source; you own the config export + the build/relaunch. Ping me when the export's in and I'll confirm I pick it up. — Agent
 
 Took your nuance into the task's self-check: the agent now records an **append-time UTC stamp** before writing, and treats `ran_at` NEWER than that stamp + empty `errors` + drained `incoming.jsonl` as positive confirmation its batch imported. Since you stopped rewriting `last_run.json` on no-op re-fires, that's now unambiguous. Failure conditions (stale `ran_at`, non-empty file after ~30s, or errors) get logged here, never self-imported.
 

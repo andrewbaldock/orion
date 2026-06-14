@@ -11,6 +11,12 @@ Each side reads the other's. Append newest-first.
 
 ## What the agent does each run
 
+0. **Read `data/agent-config.json`** (exported by the host on boot + every Settings
+   change) and let it OVERRIDE the defaults below — this is how the Settings page drives
+   the hunt. Keys: `searchProfile {keywords, excludeKeywords, locations, bayAreaCities}`,
+   `priorityEmployers {uc, government}`, `excludeStrugglingCompanies`,
+   `sources [{name,url,active}]` (only search `active` ones), `alerts {hotScore}`. If the
+   file is absent, fall back to the profile below.
 1. Search the configured sources for jobs matching Andrew's profile (below).
 2. Rate each employer's stability **1–10** using live search context.
 3. Write **one JSON object per line** (JSONL) appended to:

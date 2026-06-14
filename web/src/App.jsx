@@ -1,10 +1,14 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "./api.js";
 import JobCard from "./components/JobCard.jsx";
 import SlurpBar from "./components/SlurpBar.jsx";
 import Settings from "./components/Settings.jsx";
+import Logo from "./components/Logo.jsx";
+import { startHotAlert, stopHotAlert } from "./favicon.js";
 
 const STATUS_FILTERS = ["all", "new", "interested", "applied", "interview", "offer"];
+const ALERT_DEFAULTS = { hotJobBlink: true, flashTitle: true, hotScore: 60 };
+const isBuriedJob = (jb) => jb.hidden || jb.status === "passed" || jb.status === "rejected";
 
 export default function App() {
   const [tab, setTab] = useState("pipeline");
@@ -14,14 +18,39 @@ export default function App() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
 
+  // Tracks which job ids we've already seen, so we only alert on genuinely NEW
+  // hot jobs (null until the first load, which just seeds — no alert on startup).
+  const seenRef = useRef(null);
+  // Latest alert config from Settings; a ref so the poll closure always reads fresh.
+  const alertsRef = useRef(ALERT_DEFAULTS);
+
+  // Compare a fresh jobs payload against what we've seen and blink the favicon if a
+  // new "hot" job (score >= configurable threshold) showed up.
+  const detectHotJobs = useCallback((data) => {
+    const a = alertsRef.current || ALERT_DEFAULTS;
+    const threshold = Number.isFinite(a.hotScore) ? a.hotScore : 60;
+    const hotIds = data.filter((jb) => !isBuriedJob(jb) && jb.score >= threshold).map((jb) => jb.id);
+    if (seenRef.current === null) {                 // first load: seed only
+      seenRef.current = new Set(data.map((jb) => jb.id));
+      return;
+    }
+    const fresh = hotIds.filter((id) => !seenRef.current.has(id));
+    data.forEach((jb) => seenRef.current.add(jb.id));
+    if (fresh.length && a.hotJobBlink !== false) {
+      const focused = document.visibilityState === "visible";
+      startHotAlert(fresh.length, focused ? 5000 : 0, { flashTitle: a.flashTitle !== false });
+    }
+  }, []);
+
   // Always fetch hidden/passed too, so the "not interested" section count is honest;
   // it just lives in its own collapsed section below the viable list.
   const load = useCallback(() => {
     api.jobs({ includeHidden: true })
-      .then(setJobs)
+      .then((data) => { detectHotJobs(data); setJobs(data); })
       .catch((e) => setError(e.message));
     api.stats().then(setStats).catch(() => {});
-  }, []);
+    api.settings().then((c) => { if (c && c.alerts) alertsRef.current = c.alerts; }).catch(() => {});
+  }, [detectHotJobs]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -31,7 +60,9 @@ export default function App() {
   // in-progress notes live in JobCard local state, so this won't clobber typing.
   useEffect(() => {
     const id = setInterval(load, 60_000);
-    const onFocus = () => { if (document.visibilityState === "visible") load(); };
+    const onFocus = () => {
+      if (document.visibilityState === "visible") { stopHotAlert(); load(); }
+    };
     document.addEventListener("visibilitychange", onFocus);
     window.addEventListener("focus", onFocus);
     return () => {
@@ -55,7 +86,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">🌌 <b>Orion</b> <span className="tag">job hunt</span></div>
+        <div className="brand"><Logo /> <b>Orion</b> <span className="tag">job hunt</span></div>
         <nav>
           <button className={tab === "pipeline" ? "on" : ""} onClick={() => setTab("pipeline")}>Pipeline</button>
           <button className={tab === "settings" ? "on" : ""} onClick={() => setTab("settings")}>Settings</button>

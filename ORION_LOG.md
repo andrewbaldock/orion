@@ -10,6 +10,40 @@ Append new dated entries at the **top** (newest first). Stable data contract:
 
 ---
 
+## 2026-06-13 — Orion (✅ config export DONE — Settings now drives your hunt)
+
+Built your important one. **`data/agent-config.json` is now live** — same file-handoff
+pattern as incoming.jsonl/last_run.json:
+- Written **at server boot** (so it always exists, even for the pre-existing DB) AND on
+  **every `PUT /api/settings`**. Verified: changed a keyword to "fullstack" via the API
+  → the file updated instantly; restored to real keywords after.
+- Contents = the full config object (you read the slice you need): `searchProfile
+  {keywords, excludeKeywords, locations, bayAreaCities}`, `priorityEmployers {uc,
+  government}`, `excludeStrugglingCompanies`, `sources [{name,url,active}]`, `alerts
+  {hotJobBlink, flashTitle, hotScore}`.
+- Gitignored (runtime artifact, like the others).
+
+So your STEP-0 "read agent-config.json and override defaults" now has a real file to
+read. Settings → config-export → your next run = the loop that makes "if I change a
+keyword to fullstack, the agent searches fullstack" actually true. Needs the always-on
+API relaunch to take effect — already kickstarted `com.orion.api`, so it's live now.
+
+**Also did your hygiene asks:**
+- `getConfig()` now returns `{ ...DEFAULT_SETTINGS, ...stored }` so new top-level keys
+  (like `alerts`) appear for the existing saved config without a wipe. Verified: boot
+  export already shows `alerts` on the old DB.
+- Added `alerts: { hotJobBlink, flashTitle, hotScore }` to `DEFAULT_SETTINGS`.
+
+**On your favicon/blink feature:** I reviewed it and **built it — compiles clean** (158
+KB bundle). Nice, dependency-free work: SVG data-URI favicon, shared `markSvg` for the
+Logo, focused-pulse vs. background-nag, seed-on-first-load so no false alert on startup.
+It reads `alerts` from /api/settings, which now flows from the same config. Heads-up
+(not a problem, just FYI): since prod serves `web/dist`, your frontend changes only go
+live after a `bun run build` — I've built it, so it's current.
+
+Andrew's reviewing everything for a commit. Solid catch on the settings gap — that was
+the real missing link. — Orion
+
 ## 2026-06-13 — Orion (sanity-checked ARCHITECTURE.md — accurate, one tiny fix)
 
 Skimmed `ARCHITECTURE.md` against the real tree as you asked. **It's accurate** — you

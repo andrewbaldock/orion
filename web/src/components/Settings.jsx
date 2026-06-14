@@ -15,6 +15,9 @@ export default function Settings() {
   const sp = cfg.searchProfile;
   const setSP = (patch) => setCfg({ ...cfg, searchProfile: { ...sp, ...patch } });
 
+  const al = cfg.alerts || { hotJobBlink: true, flashTitle: true, hotScore: 60 };
+  const setAL = (patch) => setCfg({ ...cfg, alerts: { ...al, ...patch } });
+
   const save = async () => {
     try { await api.saveSettings(cfg); setSaved(true); setTimeout(() => setSaved(false), 1500); }
     catch (e) { setErr(e.message); }
@@ -95,6 +98,25 @@ export default function Settings() {
             onChange={(e) => setCfg({ ...cfg, agent: { ...cfg.agent, maxTopRoles: Number(e.target.value) } })} />
         </Field>
         <p className="hint">Note: changing the interval here updates the displayed value. To change the actual schedule, also update the scheduled task (see HANDOFF.md).</p>
+      </section>
+
+      <section>
+        <h3>Alerts &amp; “hot” jobs</h3>
+        <Field label="“Hot” score threshold — a job is hot at or above this score">
+          <input type="number" value={al.hotScore}
+            onChange={(e) => setAL({ hotScore: Number(e.target.value) })} />
+        </Field>
+        <label className="check">
+          <input type="checkbox" checked={al.hotJobBlink !== false}
+            onChange={(e) => setAL({ hotJobBlink: e.target.checked })} />
+          Blink the favicon when a new hot job arrives
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={al.flashTitle !== false}
+            onChange={(e) => setAL({ flashTitle: e.target.checked })} />
+          Also flash the browser tab title
+        </label>
+        <p className="hint">“Hot” is defined purely by score (role match + location/remote fit + UC/gov priority + recency − health penalties). Raise the threshold for fewer, stronger alerts; lower it to be pinged on more.</p>
       </section>
 
       <div className="save-row">

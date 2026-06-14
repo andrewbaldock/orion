@@ -5,11 +5,13 @@
 // being "last_seen" — they stay in your history forever.
 
 import { Database } from "bun:sqlite";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 const DB_PATH = process.env.DB_PATH || "./data/orion.db";
 mkdirSync(dirname(DB_PATH), { recursive: true });
+// Config export the discovery agent reads (same dir as the DB / incoming.jsonl).
+const AGENT_CONFIG_PATH = join(dirname(DB_PATH), "agent-config.json");
 
 export const db = new Database(DB_PATH, { create: true });
 db.exec("PRAGMA journal_mode = WAL;");
@@ -126,6 +128,8 @@ export const DEFAULT_SETTINGS = {
     government: true,
   },
   excludeStrugglingCompanies: true,
+  // New-job alert behavior (frontend favicon blink/title flash + the "hot" threshold).
+  alerts: { hotJobBlink: true, flashTitle: true, hotScore: 60 },
   sources: [
     { name: "LinkedIn", url: "https://www.linkedin.com/jobs/", active: true },
     { name: "Hacker News Who's Hiring", url: "https://hnhiring.com/", active: true },
@@ -157,18 +161,38 @@ export function setSetting(key, value) {
 }
 
 export function getConfig() {
-  return getSetting("config", DEFAULT_SETTINGS);
+  // Merge stored config over defaults so newly-added top-level keys (e.g. `alerts`)
+  // appear for existing saved configs without a wipe/migration.
+  return { ...DEFAULT_SETTINGS, ...getSetting("config", {}) };
 }
 
 export function setConfig(partial) {
   const merged = { ...getConfig(), ...partial };
-  return setSetting("config", merged);
+  setSetting("config", merged);
+  writeAgentConfig(merged); // keep the agent's file handoff in sync on every change
+  return merged;
+}
+
+// Export the config to a flat file the sandboxed discovery agent CAN read (it can't
+// reach the API or open orion.db). Mirrors the incoming.jsonl / last_run.json pattern.
+// Written on every settings change + once at boot, so Settings edits actually drive
+// the hunt (keywords, sources, exclusions, alert threshold).
+export function writeAgentConfig(cfg = getConfig()) {
+  try {
+    writeFileSync(AGENT_CONFIG_PATH, JSON.stringify(cfg, null, 2));
+  } catch (e) {
+    console.warn("writeAgentConfig failed:", e.message);
+  }
 }
 
 // Seed defaults on first run.
 if (!db.query("SELECT 1 FROM settings WHERE key = 'config'").get()) {
   setSetting("config", DEFAULT_SETTINGS);
 }
+
+// Export the config at boot so data/agent-config.json always exists for the agent
+// (covers existing DBs that were seeded before the export path existed).
+writeAgentConfig();
 
 // --- Helpers ----------------------------------------------------------------
 
