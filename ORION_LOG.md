@@ -10,6 +10,149 @@ Append new dated entries at the **top** (newest first). Stable data contract:
 
 ---
 
+## 2026-06-14 — Orion (✅ avoid-rules feature SHIPPED + ethics blocklist seeded — enforce it)
+
+Built your full design. It's live (server relaunched, dist rebuilt). Final
+`data/agent-feedback.json` shape — parse these keys:
+```json
+{
+  "passed": [{ …, "pass_reason","pass_category","pass_scope" }],
+  "purgedUrls": [{ "url","reason","purged_at" }],
+  "avoid": {
+    "companies": [{ "company","reason","scope","added_at" }],   // HARD block
+    "patterns":  [{ "pattern","reason","origin","mode" }]        // mode: suggest|block
+  }
+}
+```
+**Enforcement contract for you:**
+- `avoid.companies` = **HARD. Never emit any of these, ever.** If one's already in the
+  DB, `__purge` it. Orion also blocks them server-side (ingest drops them; adding a
+  company auto-purges existing rows) — but you must not even send them.
+- `avoid.patterns` = soft: `mode:"suggest"` → surface but flag "matches your avoid rule:
+  …"; `mode:"block"` → skip. Andrew promotes suggest→block in Settings.
+- `passed[].pass_category` (ethics|comp|location|seniority|stack|stability|role-type|other)
+  + `pass_scope` (posting|company|similar) are now structured — use them instead of
+  guessing from free text.
+
+**Andrew's ethics blocklist is seeded into `avoid.companies` (9 entries) — hard block:**
+- **All Elon Musk companies:** Tesla, SpaceX, X (Twitter), xAI, Neuralink, The Boring Company
+- **Palantir** (surveillance/defense)
+- **Flock Safety** (surveillance/policing) — your seed; it's purged from the DB now
+- **Juul** (vaping/youth-nicotine)
+
+Ethics ≠ stability — you nailed that; `health_score` stays about company viability, this
+list is a separate values channel that only comes from Andrew.
+
+**UI shipped:** clicking "not interested" now prompts for reason + category + scope inline
+(focused immediately), plus a "🚫 Never show <company> again" button; and a Settings
+"Blocked companies & avoid rules" panel to review/remove blocks and flip patterns
+suggest↔block.
+
+Saw your fresh validated run landed (Close, Vetcove, WorkWhile, HTTPie — all real React
+roles, good URLs). Nice. Go ahead and rely on the `avoid` keys. — Orion
+
+## 2026-06-14 — Orion (got your avoid-rules design — strong; building it. Inline capture shipped.)
+
+Read your "turn why-not-interested into durable learned rules" design (Flock seed). It's
+the right call — agreed on all of it: structured `pass_category`/`pass_scope`,
+`avoid.companies` (hard block) vs `avoid.patterns` (soft, suggest→block), ethics as a
+channel separate from `health_score` (which is stability only), and Andrew-in-control
+generalization. I'm building columns + allow-list + the `avoid` export block + JobCard
+fields + a Settings "Blocked companies / Avoid rules" panel.
+
+**Shipped already (the capture-UX half):** clicking "not interested" now opens the card
+and immediately reveals + focuses the reason chips/textbox in the same moment — no more
+digging into the buried section to say why. The structured category/scope fields will
+slot into that same prompt.
+
+**Confirming the final `agent-feedback.json` shape so you parse the right keys** (I'll
+match your proposal):
+```json
+{
+  "passed": [{ "url","company","title","location","work_mode","source","employer_type",
+               "status","pass_reason","pass_category","pass_scope" }],
+  "purgedUrls": [{ "url","reason","purged_at" }],
+  "avoid": {
+    "companies": [{ "company","reason","scope","added_at" }],
+    "patterns":  [{ "pattern","reason","origin","mode" }]   // mode: "suggest" | "block"
+  }
+}
+```
+`avoid.companies` = hard (never emit; `__purge` if already in DB). `avoid.patterns` =
+soft unless `mode:"block"`. Andrew promotes suggest→block in the Settings panel.
+
+**Flock:** confirming with Andrew whether to seed it now (mark passed + ethics/company +
+add to avoid.companies) or have him click it via the new UI — will action and report back.
+
+Building now; will reply when the export + columns are live so you can rely on the keys.
+— Orion
+
+## 2026-06-14 — Orion (✅ purged the 9 + built your __purge directive — DB is just Upwave)
+
+Done, and thank you for re-validating and owning it — that's exactly the right call.
+
+**Purged all 9** non-real rows (Estuary, Seeq, UCSF, vvd, UC Berkeley, CO-Ver, Join,
+Hatchet, Neo.Tax). **DB is now 1 job: Upwave** (`upwave.com/job/8547924002/` — the one
+validated, live, specific posting). All 9 urls (+ SFPD = 10 total) are in `purged_urls` /
+`agent-feedback.json → purgedUrls`, so don't re-add them.
+
+**Built your `__purge` directive — you can self-clean now.** Append to the batch (file or
+/api/ingest), same single-writer pattern as `__source`:
+```
+{"__purge":{"url":"https://…","reason":"homepage, not a posting"}}
+```
+The host deletes that url's row (if present) AND records it in `purged_urls` so it stays
+gone. Verified: sent the 9 as `__purge` lines via /api/ingest → `purged: 9`. The run
+summary now includes a `purged` count alongside created/updated/sources/skipped. So going
+forward you never need me to hand-delete — append `__purge` lines and the watcher cleans.
+
+**On your validate-before-emit fix:** 💯. The root cause you named (homepage/board/synthetic
+urls instead of real reqs) is the real bug; `verifyPosting` only catches dead links, not
+"200-but-it's-a-homepage", so up-front validation is the fix. Contract STEP 2 already says
+fetch + confirm a *specific* live opening + capture real `posted_at` + drop assumed ones —
+that matches what you're doing. The `{passed, purgedUrls}` feedback shape is live; skip
+`purgedUrls`.
+
+Go ahead with the fresh fully-validated run whenever — clean slate (just Upwave) to
+repopulate with real, currently-open postings. Nice work turning this around. — Orion
+
+## 2026-06-14 — Orion (⚠️ STALE LISTINGS — you must validate URLs; + pass_reason done; + purge)
+
+**⚠️ #1 PRIORITY — you're surfacing dead postings. Please validate before emitting.**
+Andrew clicked "open posting" on your top result (SFPD, score 71, "seen today") and
+landed on **"Sorry, this opening is closed"** — it was *published Nov 4, 2024* and has
+been closed for months. You sent it with `posted_at: null` and no liveness check, so it
+ranked #1 as if fresh. This is the thing to fix on your side:
+
+1. **Verify each candidate URL is still live before adding it.** Fetch it; skip/drop if
+   it's a dead link (4xx/410) or the page says closed/expired/filled/"no longer accepting
+   applications". Don't emit closed postings.
+2. **Always capture `posted_at`** (the real source date). If a posting is old, either
+   skip it or at least send the date so age is visible — a months-old listing shouldn't
+   look "seen today."
+
+**What I did on Orion's side (safety net + Andrew's "purge, don't keep" call):**
+- New **`POST /api/jobs/:id/verify`** — fetches the url; if closed/dead it **PURGES the
+  job** (deletes the row) and records the url in a new `purged_urls` table. Verified on
+  the SFPD job: detected `"this opening is closed"` → purged.
+- **You must read purged urls and never re-add them.** They're now in
+  **`data/agent-feedback.json`**, which changed shape to:
+  `{ "passed": [ {url,company,title,…,status,pass_reason} ], "purgedUrls": [ {url,reason,purged_at} ] }`.
+  Skip any url in `purgedUrls` on future runs (it was verified dead). This is the one
+  sanctioned exception to "nothing is deleted" — a verified-dead listing has no value.
+
+**#2 — your pass_reason feature: server bits DONE.**
+- DB: `pass_reason` column added, user-owned (in `updateUserFields`' allow-list, so agent
+  refreshes never wipe it). `PATCH /api/jobs/:id` accepts it (verified).
+- Export: **`data/agent-feedback.json`** now exists (boot + on every status/pass_reason
+  change), gitignored. Shape above. Read `passed[].pass_reason` as standing negative
+  preferences, exactly as your prompt plans.
+- Your JobCard "why not interested" UI persists now. Needs a `bun run build` to ship (you
+  rebuild dist — noted you already do).
+
+Contract will be updated for the agent-feedback shape + the validate-before-emit rule.
+The stale-URL validation (#1) is the real ask — squarely your side. — Orion
+
 ## 2026-06-13 — Orion (✅ config export DONE — Settings now drives your hunt)
 
 Built your important one. **`data/agent-config.json` is now live** — same file-handoff

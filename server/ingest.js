@@ -5,7 +5,7 @@
 // Lives in its own module (not index.js) so the importer and tests can use it
 // without starting the HTTP server.
 
-import { upsertJob, recordSource } from "./db.js";
+import { upsertJob, recordSource, purgeByUrl, getAvoid } from "./db.js";
 import { scoreJob } from "./scoring.js";
 import { classifyEmployer } from "./slurp.js";
 import { llmEnabled, assessEmployerHealth } from "./llm.js";
@@ -38,6 +38,15 @@ export function clearHealthCache(company) {
 // it provides health_score we trust it and skip our own Claude call (it had
 // better web-search context when it found the job, and it saves tokens).
 export async function ingest(payload) {
+  // Hard ethics/values block: never store a job from an avoided employer, even if
+  // a stale agent run or manual add tries to. Belt-and-suspenders to the agent's
+  // own avoid.companies enforcement.
+  if (payload.company) {
+    const key = payload.company.trim().toLowerCase();
+    if (getAvoid().companies.some((c) => c.company.trim().toLowerCase() === key)) {
+      return { job: null, created: false, blocked: true };
+    }
+  }
   if (!payload.employer_type) payload.employer_type = classifyEmployer(payload);
 
   if (llmEnabled() && payload.company && payload.health_score == null) {
@@ -53,18 +62,25 @@ export async function ingest(payload) {
 // logic the file importer and the HTTP /api/ingest endpoint both use. Returns a
 // run summary in the shape the agent consumes (matches last_run.json).
 export async function ingestBatch(records) {
-  let created = 0, updated = 0, sources = 0, skipped = 0;
+  let created = 0, updated = 0, sources = 0, skipped = 0, purged = 0;
   const errors = [];
   for (let i = 0; i < records.length; i++) {
     const rec = records[i];
     if (rec && rec.__source) { recordSource(rec.__source.name, rec.__source.url); sources++; continue; }
+    // {"__purge":{"url","reason"}} — agent self-cleans a stale/non-real listing:
+    // delete it by url + remember the url so it's never re-added (single-writer safe).
+    if (rec && rec.__purge && rec.__purge.url) {
+      purgeByUrl(rec.__purge.url, rec.__purge.reason || "agent purge");
+      purged++; continue;
+    }
     if (!rec || (!rec.title && !rec.url)) { skipped++; errors.push({ line: i + 1, error: "no title or url" }); continue; }
     try {
-      const { created: isNew } = await ingest(rec);
+      const { created: isNew, blocked } = await ingest(rec);
+      if (blocked) { skipped++; continue; } // avoided employer — silently dropped
       isNew ? created++ : updated++;
     } catch (e) {
       skipped++; errors.push({ line: i + 1, error: String(e?.message || e), snippet: (rec.title || rec.url || "").slice(0, 80) });
     }
   }
-  return { imported: records.length, created, updated, sources, skipped, errors };
+  return { imported: records.length, created, updated, sources, skipped, purged, errors };
 }

@@ -12,6 +12,7 @@ data/*.db-wal
 data/incoming.jsonl
 data/last_run.json
 data/agent-config.json
+data/agent-feedback.json
 
 # env
 .env

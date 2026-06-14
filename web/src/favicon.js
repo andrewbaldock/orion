@@ -59,6 +59,11 @@ function setIcon(href) { iconLink().setAttribute("href", href); }
 let timer = null;
 let baseTitle = typeof document !== "undefined" ? document.title : "Orion";
 
+// Let the UI (e.g. the header Logo) react to alert start/stop in sync with the
+// favicon. Register one listener; it's called with (isAlerting, count).
+let listener = null;
+export function onAlertChange(cb) { listener = cb; }
+
 // Start blinking. If autoStopMs > 0 the alert clears itself after that long
 // (used when the tab is already focused — a quick pulse, not a nag).
 // opts.flashTitle (default true) also flashes the tab title text.
@@ -75,6 +80,7 @@ export function startHotAlert(count = 1, autoStopMs = 0, opts = {}) {
   };
   tick();
   timer = setInterval(tick, 650);
+  if (listener) listener(true, count);
   if (autoStopMs > 0) setTimeout(stopHotAlert, autoStopMs);
 }
 
@@ -82,4 +88,5 @@ export function stopHotAlert() {
   if (timer) { clearInterval(timer); timer = null; }
   setIcon(NORMAL);
   if (baseTitle !== null) document.title = baseTitle;
+  if (listener) listener(false, 0);
 }

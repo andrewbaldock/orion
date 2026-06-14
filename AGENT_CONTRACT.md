@@ -17,8 +17,25 @@ Each side reads the other's. Append newest-first.
    `priorityEmployers {uc, government}`, `excludeStrugglingCompanies`,
    `sources [{name,url,active}]` (only search `active` ones), `alerts {hotScore}`. If the
    file is absent, fall back to the profile below.
+0b. **Read `data/agent-feedback.json`** and respect it:
+    `{ "passed":[{url,company,title,…,pass_reason,pass_category,pass_scope}],
+       "purgedUrls":[{url,reason}],
+       "avoid":{ "companies":[{company,reason,scope}], "patterns":[{pattern,reason,mode}] } }`.
+    - `passed[]` — standing negative preferences; use `pass_category`/`pass_scope`
+      (structured) over guessing from free text.
+    - `purgedUrls` — **never re-emit** (verified dead).
+    - `avoid.companies` — **HARD BLOCK. Never emit any of these employers, ever.** Orion
+      blocks them server-side too, but you must not send them.
+    - `avoid.patterns` — soft: `mode:"suggest"` → surface but flag "matches avoid rule";
+      `mode:"block"` → skip.
+    Absent file → nothing to apply.
 1. Search the configured sources for jobs matching Andrew's profile (below).
-2. Rate each employer's stability **1–10** using live search context.
+2. **VALIDATE each candidate before emitting:** fetch the posting URL and DROP it if the
+   link is dead (4xx/410) or the page shows closed/expired/filled/"no longer accepting
+   applications". **Always capture `posted_at`** (the real source date) — never emit a
+   stale posting as if fresh. (Orion also has a `verify` safety net that purges dead URLs,
+   but don't rely on it — validate up front.)
+3. Rate each employer's stability **1–10** using live search context.
 3. Write **one JSON object per line** (JSONL) appended to:
    ```
    ~/Code/orion/data/incoming.jsonl
@@ -73,6 +90,13 @@ arrives.
 New source discovered? Emit:
 ```json
 {"__source": {"name": "Working Nomads", "url": "https://www.workingnomads.com/jobs"}}
+```
+
+Need to remove a stale/non-real listing you previously sent? Emit a purge directive —
+the host deletes that url's row and records it so it's never re-added (self-clean, no
+hand-deletion needed):
+```json
+{"__purge": {"url": "https://estuary.dev/", "reason": "homepage, not a specific posting"}}
 ```
 
 ### Field rules — who does what

@@ -18,6 +18,15 @@ export const api = {
     }).then(j),
   reassessHealth: (id) =>
     fetch(`/api/jobs/${id}/health`, { method: "POST" }).then(j),
+  verifyPosting: (id) =>
+    fetch(`/api/jobs/${id}/verify`, { method: "POST" }).then(j),
+  avoid: () => fetch("/api/avoid").then(j),
+  blockCompany: (company, reason, scope) =>
+    fetch("/api/avoid/company", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ company, reason, scope }) }).then(j),
+  unblockCompany: (company) =>
+    fetch("/api/avoid/company", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ company }) }).then(j),
+  saveAvoid: (avoid) =>
+    fetch("/api/avoid", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(avoid) }).then(j),
   slurp: (url) =>
     fetch("/api/slurp", {
       method: "POST",

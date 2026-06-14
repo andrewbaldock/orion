@@ -1,9 +1,10 @@
 // Orion API server — Bun.serve. No framework needed.
 import {
   upsertJob, getJob, listJobs, updateUserFields, getStatusHistory,
-  listSources, recordSource, stats, getConfig, setConfig,
+  listSources, recordSource, stats, getConfig, setConfig, purgeJob,
+  getAvoid, setAvoid, addAvoidCompany, removeAvoidCompany,
 } from "./db.js";
-import { slurpUrl, parseJobFromHtml } from "./slurp.js";
+import { slurpUrl, parseJobFromHtml, verifyPosting } from "./slurp.js";
 import { llmEnabled, extractJobWithLLM } from "./llm.js";
 import { ingest, ingestBatch, lookupHealth, clearHealthCache } from "./ingest.js";
 
@@ -70,6 +71,19 @@ const server = Bun.serve({
         return json({ ran_at: new Date().toISOString(), ...res });
       }
 
+      // POST /api/jobs/:id/verify  -> fetch the posting URL; if it's a dead link or
+      // shows a "closed/expired/filled" marker, PURGE the job (delete it + remember
+      // the url so the agent never re-adds it). Safety net for stale agent finds.
+      const verifyMatch = pathname.match(/^\/api\/jobs\/(\d+)\/verify$/);
+      if (verifyMatch && method === "POST") {
+        const job = getJob(Number(verifyMatch[1]));
+        if (!job) return json({ error: "not found" }, 404);
+        if (!job.url) return json({ error: "job has no url to verify" }, 400);
+        const { closed, reason } = await verifyPosting(job.url);
+        if (closed) { purgeJob(job.id, reason); return json({ purged: true, reason }); }
+        return json({ purged: false, reason });
+      }
+
       // POST /api/jobs/:id/health  -> recompute employer health for this job's company
       const healthMatch = pathname.match(/^\/api\/jobs\/(\d+)\/health$/);
       if (healthMatch && method === "POST") {
@@ -123,6 +137,25 @@ const server = Bun.serve({
       if (pathname === "/api/settings" && (method === "PUT" || method === "PATCH")) {
         const body = await req.json();
         return json(setConfig(body));
+      }
+
+      // --- Avoid rules (ethics/values blocklist) ---
+      // GET  /api/avoid              -> { companies, patterns }
+      // POST /api/avoid/company {company,reason,scope}  -> add a hard block (+ purge matches)
+      // DELETE /api/avoid/company {company}             -> remove a hard block
+      // PUT  /api/avoid             -> replace the whole avoid object (patterns edits)
+      if (pathname === "/api/avoid" && method === "GET") return json(getAvoid());
+      if (pathname === "/api/avoid" && (method === "PUT" || method === "PATCH")) {
+        return json(setAvoid(await req.json()));
+      }
+      if (pathname === "/api/avoid/company" && method === "POST") {
+        const { company, reason, scope } = await req.json();
+        if (!company) return json({ error: "company required" }, 400);
+        return json(addAvoidCompany(company, reason || "", scope || "company"));
+      }
+      if (pathname === "/api/avoid/company" && method === "DELETE") {
+        const { company } = await req.json();
+        return json(removeAvoidCompany(company));
       }
 
       // serve built frontend in production (web/dist), via absolute DIST path

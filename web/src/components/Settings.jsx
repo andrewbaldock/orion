@@ -7,8 +7,11 @@ export default function Settings() {
   const [cfg, setCfg] = useState(null);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState(null);
+  const [avoid, setAvoid] = useState(null);
+  const [newCo, setNewCo] = useState("");
 
   useEffect(() => { api.settings().then(setCfg).catch((e) => setErr(e.message)); }, []);
+  useEffect(() => { api.avoid().then(setAvoid).catch(() => {}); }, []);
   if (err) return <div className="banner err">{err}</div>;
   if (!cfg) return <div className="settings"><p>Loading…</p></div>;
 
@@ -19,7 +22,20 @@ export default function Settings() {
   const setAL = (patch) => setCfg({ ...cfg, alerts: { ...al, ...patch } });
 
   const save = async () => {
-    try { await api.saveSettings(cfg); setSaved(true); setTimeout(() => setSaved(false), 1500); }
+    // Clean the line-list fields only at save time — NOT on every keystroke (that
+    // ate newlines and made the textareas feel uneditable). Trim + drop blanks here.
+    const clean = (arr) => (arr || []).map((s) => s.trim()).filter(Boolean);
+    const cleaned = {
+      ...cfg,
+      searchProfile: {
+        ...cfg.searchProfile,
+        keywords: clean(cfg.searchProfile.keywords),
+        excludeKeywords: clean(cfg.searchProfile.excludeKeywords),
+        bayAreaCities: clean(cfg.searchProfile.bayAreaCities),
+      },
+      priorityEmployers: { ...cfg.priorityEmployers, uc: clean(cfg.priorityEmployers.uc) },
+    };
+    try { await api.saveSettings(cleaned); setCfg(cleaned); setSaved(true); setTimeout(() => setSaved(false), 1500); }
     catch (e) { setErr(e.message); }
   };
 
@@ -119,6 +135,46 @@ export default function Settings() {
         <p className="hint">“Hot” is defined purely by score (role match + location/remote fit + UC/gov priority + recency − health penalties). Raise the threshold for fewer, stronger alerts; lower it to be pinged on more.</p>
       </section>
 
+      <section>
+        <h3>Blocked companies &amp; avoid rules</h3>
+        <p className="hint">Hard blocks — the agent never surfaces these, on ethical/values grounds. Distinct from employer-health (which is about stability).</p>
+        {avoid && (
+          <>
+            <div className="blocked-list">
+              {avoid.companies.length === 0 && <p className="empty">No blocked companies yet.</p>}
+              {avoid.companies.map((c) => (
+                <div key={c.company} className="blocked-row">
+                  <span className="co">🚫 {c.company}</span>
+                  {c.reason && <span className="why">{c.reason}</span>}
+                  <button onClick={() => api.unblockCompany(c.company).then(setAvoid)}>remove</button>
+                </div>
+              ))}
+            </div>
+            <div className="add-block">
+              <input value={newCo} placeholder="Company to block…" onChange={(e) => setNewCo(e.target.value)} />
+              <button onClick={() => { if (newCo.trim()) api.blockCompany(newCo.trim(), "blocked by user", "company").then((a) => { setAvoid(a); setNewCo(""); }); }}>Block</button>
+            </div>
+            {avoid.patterns.length > 0 && (
+              <div className="avoid-patterns">
+                <p className="hint">Soft avoid patterns (the agent flags or skips matches):</p>
+                {avoid.patterns.map((p, i) => (
+                  <div key={i} className="pattern-row">
+                    <span>{p.pattern} <em>({p.reason})</em></span>
+                    <select value={p.mode || "suggest"} onChange={(e) => {
+                      const patterns = avoid.patterns.map((x, idx) => idx === i ? { ...x, mode: e.target.value } : x);
+                      api.saveAvoid({ ...avoid, patterns }).then(setAvoid);
+                    }}>
+                      <option value="suggest">suggest (flag only)</option>
+                      <option value="block">block (skip)</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
       <div className="save-row">
         <button className="save" onClick={save}>Save settings</button>
         {saved && <span className="ok">✓ saved</span>}
@@ -127,10 +183,15 @@ export default function Settings() {
   );
 }
 
+// NB: a DIV, not a <label>. Wrapping a multi-line <textarea> in a <label> that also
+// holds the label <span> makes the label intercept clicks and disrupt the caret —
+// that's what made every Settings textarea feel uneditable. Plain div + span fixes it.
 function Field({ label, children }) {
-  return <label className="field"><span>{label}</span>{children}</label>;
+  return <div className="field"><span>{label}</span>{children}</div>;
 }
-function splitLines(v) { return v.split("\n").map((s) => s.trim()).filter(Boolean); }
+// Split on newlines ONLY — no trim/filter here, or newlines/spaces get eaten as you
+// type (made the textareas feel uneditable). Cleaning happens at save time.
+function splitLines(v) { return v.split("\n"); }
 function updateSource(cfg, setCfg, i, patch) {
   const sources = cfg.sources.map((s, idx) => (idx === i ? { ...s, ...patch } : s));
   setCfg({ ...cfg, sources });

@@ -4,7 +4,7 @@ import JobCard from "./components/JobCard.jsx";
 import SlurpBar from "./components/SlurpBar.jsx";
 import Settings from "./components/Settings.jsx";
 import Logo from "./components/Logo.jsx";
-import { startHotAlert, stopHotAlert } from "./favicon.js";
+import { startHotAlert, stopHotAlert, onAlertChange } from "./favicon.js";
 
 const STATUS_FILTERS = ["all", "new", "interested", "applied", "interview", "offer"];
 const ALERT_DEFAULTS = { hotJobBlink: true, flashTitle: true, hotScore: 60 };
@@ -17,6 +17,7 @@ export default function App() {
   const [showBuried, setShowBuried] = useState(false);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
+  const [alerting, setAlerting] = useState(false);
 
   // Tracks which job ids we've already seen, so we only alert on genuinely NEW
   // hot jobs (null until the first load, which just seeds — no alert on startup).
@@ -54,6 +55,9 @@ export default function App() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Keep the header logo's alert state in sync with the favicon blink.
+  useEffect(() => { onAlertChange((on) => setAlerting(on)); }, []);
+
   // Auto-refresh so newly imported jobs appear without a manual reload: poll every
   // 60s, and refresh when the tab regains focus (cheap, and catches the common
   // "switch back to the tab" case immediately). load() only swaps the jobs array —
@@ -86,7 +90,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand"><Logo /> <b>Orion</b> <span className="tag">job hunt</span></div>
+        <div className="brand"><Logo alerting={alerting} /> <b>Orion</b> <span className="tag">job hunt</span></div>
         <nav>
           <button className={tab === "pipeline" ? "on" : ""} onClick={() => setTab("pipeline")}>Pipeline</button>
           <button className={tab === "settings" ? "on" : ""} onClick={() => setTab("settings")}>Settings</button>

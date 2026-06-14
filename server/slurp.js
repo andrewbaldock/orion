@@ -46,6 +46,30 @@ export async function slurpUrl(url, { fetchImpl = fetch } = {}) {
   return parseJobFromHtml(html, url);
 }
 
+// Check whether a posting is still live. Returns { closed, reason }.
+// closed=true on a dead URL (4xx/5xx/network) or when the page text shows a
+// closed/expired/filled marker. Conservative: ambiguous → closed=false (don't
+// bury a live job on a false positive). Safety net for stale agent finds.
+const CLOSED_MARKERS = [
+  "this opening is closed", "no longer accepting applications", "position has been filled",
+  "this job is no longer available", "posting has expired", "this position is closed",
+  "applications are closed", "job posting not found", "this listing has expired",
+];
+export async function verifyPosting(url, { fetchImpl = fetch } = {}) {
+  if (!url || url.startsWith("hn://")) return { closed: false, reason: "unverifiable url (skipped)" };
+  let res;
+  try {
+    res = await fetchImpl(url, { headers: { "User-Agent": "Mozilla/5.0 (OrionJobBot)" }, redirect: "follow" });
+  } catch (e) {
+    return { closed: true, reason: `unreachable: ${e.message}` };
+  }
+  if (res.status === 404 || res.status === 410) return { closed: true, reason: `HTTP ${res.status}` };
+  if (!res.ok) return { closed: false, reason: `HTTP ${res.status} (kept — not a definite close)` };
+  const text = (await res.text()).toLowerCase();
+  const hit = CLOSED_MARKERS.find((m) => text.includes(m));
+  return hit ? { closed: true, reason: `page says: "${hit}"` } : { closed: false, reason: "live" };
+}
+
 // --- internals --------------------------------------------------------------
 
 function finalize(out) {

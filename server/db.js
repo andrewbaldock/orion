@@ -12,6 +12,7 @@ const DB_PATH = process.env.DB_PATH || "./data/orion.db";
 mkdirSync(dirname(DB_PATH), { recursive: true });
 // Config export the discovery agent reads (same dir as the DB / incoming.jsonl).
 const AGENT_CONFIG_PATH = join(dirname(DB_PATH), "agent-config.json");
+const AGENT_FEEDBACK_PATH = join(dirname(DB_PATH), "agent-feedback.json");
 
 export const db = new Database(DB_PATH, { create: true });
 db.exec("PRAGMA journal_mode = WAL;");
@@ -84,6 +85,14 @@ CREATE TABLE IF NOT EXISTS sources (
   active      INTEGER DEFAULT 1
 );
 
+-- URLs of postings that were verified dead/closed and purged. Kept so the agent
+-- never re-adds them (the only thing we retain from a purged listing).
+CREATE TABLE IF NOT EXISTS purged_urls (
+  url        TEXT PRIMARY KEY,
+  reason     TEXT,
+  purged_at  TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key        TEXT PRIMARY KEY,
   value      TEXT NOT NULL,           -- JSON
@@ -108,6 +117,9 @@ function ensureColumn(table, column, decl) {
 ensureColumn("jobs", "health_score", "INTEGER");
 ensureColumn("jobs", "fit_summary", "TEXT"); // agent's one-line "why this is a fit"
 ensureColumn("jobs", "posted_at", "TEXT");   // when the role was POSTED (source date), if known
+ensureColumn("jobs", "pass_reason", "TEXT"); // user-owned: why Andrew passed (agent learns from it)
+ensureColumn("jobs", "pass_category", "TEXT"); // user-owned: ethics|comp|location|seniority|stack|stability|role-type|other
+ensureColumn("jobs", "pass_scope", "TEXT");    // user-owned: posting|company|similar
 
 // --- Settings / search configuration ----------------------------------------
 // Everything the search + scoring uses is configurable here and editable from
@@ -173,6 +185,49 @@ export function setConfig(partial) {
   return merged;
 }
 
+// --- Avoid rules (ethics/values blocklist) ----------------------------------
+// Hard "never show me this employer" + soft "flag roles like this". Stored in
+// settings; exported into agent-feedback.json so the discovery agent enforces it.
+// Ethics is orthogonal to health_score (stability) and can ONLY come from Andrew.
+const DEFAULT_AVOID = { companies: [], patterns: [] };
+
+export function getAvoid() {
+  return { ...DEFAULT_AVOID, ...getSetting("avoid", {}) };
+}
+
+export function setAvoid(avoid) {
+  setSetting("avoid", { ...DEFAULT_AVOID, ...avoid });
+  writeAgentFeedback(); // avoid block lives in the feedback export
+  return getAvoid();
+}
+
+// Add a company to the hard blocklist (idempotent on lowercased name) + purge any
+// matching jobs already in the DB so it disappears immediately.
+export function addAvoidCompany(company, reason = "", scope = "company") {
+  if (!company) return getAvoid();
+  const avoid = getAvoid();
+  const key = company.trim().toLowerCase();
+  if (!avoid.companies.some((c) => c.company.trim().toLowerCase() === key)) {
+    avoid.companies.push({ company: company.trim(), reason, scope, added_at: nowISO() });
+    setSetting("avoid", avoid);
+  }
+  // Remove any current rows for this company (records urls so they don't return).
+  for (const j of db.query("SELECT id FROM jobs WHERE lower(company) = ?").all(key)) {
+    purgeJob(j.id, `avoid: ${reason || "blocked employer"}`);
+  }
+  writeAgentFeedback();
+  return getAvoid();
+}
+
+export function removeAvoidCompany(company) {
+  const avoid = getAvoid();
+  const key = (company || "").trim().toLowerCase();
+  avoid.companies = avoid.companies.filter((c) => c.company.trim().toLowerCase() !== key);
+  setSetting("avoid", avoid);
+  writeAgentFeedback();
+  return getAvoid();
+}
+
 // Export the config to a flat file the sandboxed discovery agent CAN read (it can't
 // reach the API or open orion.db). Mirrors the incoming.jsonl / last_run.json pattern.
 // Written on every settings change + once at boot, so Settings edits actually drive
@@ -185,14 +240,36 @@ export function writeAgentConfig(cfg = getConfig()) {
   }
 }
 
+// Export the jobs Andrew passed/rejected (with his reason) so the agent learns to
+// stop surfacing similar roles. Same file-handoff pattern; regenerated whenever a
+// status/pass_reason changes + at boot. Empty array when there are none.
+export function writeAgentFeedback() {
+  try {
+    const passed = db.query(
+      `SELECT url, company, title, location, work_mode, source, employer_type, status,
+              pass_reason, pass_category, pass_scope
+       FROM jobs WHERE status IN ('passed','rejected') OR (pass_reason IS NOT NULL AND pass_reason != '')
+       ORDER BY updated_at DESC`
+    ).all();
+    const purgedUrls = db.query("SELECT url, reason, purged_at FROM purged_urls ORDER BY purged_at DESC").all();
+    const avoid = getAvoid(); // { companies:[…hard block], patterns:[…soft, mode] }
+    // Agent: skip passed-like roles; never re-add purgedUrls; NEVER emit
+    // avoid.companies (hard); flag/skip avoid.patterns per each pattern's mode.
+    writeFileSync(AGENT_FEEDBACK_PATH, JSON.stringify({ passed, purgedUrls, avoid }, null, 2));
+  } catch (e) {
+    console.warn("writeAgentFeedback failed:", e.message);
+  }
+}
+
 // Seed defaults on first run.
 if (!db.query("SELECT 1 FROM settings WHERE key = 'config'").get()) {
   setSetting("config", DEFAULT_SETTINGS);
 }
 
-// Export the config at boot so data/agent-config.json always exists for the agent
-// (covers existing DBs that were seeded before the export path existed).
+// Export the config + feedback at boot so the agent's files always exist
+// (covers existing DBs seeded before these export paths existed).
 writeAgentConfig();
+writeAgentFeedback();
 
 // --- Helpers ----------------------------------------------------------------
 
@@ -265,13 +342,47 @@ export function getJob(id) {
   return db.query("SELECT * FROM jobs WHERE id = ?").get(id);
 }
 
+// Purge a closed/dead posting: delete the row AND remember its url so the agent
+// never re-adds it. (Per Andrew: closed jobs are purged, not kept/badged. This is
+// the one sanctioned exception to "nothing is deleted" — a verified-dead listing
+// has no value, and recording the url keeps it from coming back.)
+function rememberPurged(url, reason) {
+  if (!url) return;
+  db.query(
+    `INSERT INTO purged_urls (url, reason) VALUES (?, ?)
+     ON CONFLICT(url) DO UPDATE SET reason = excluded.reason, purged_at = datetime('now')`
+  ).run(url, reason);
+}
+
+export function purgeJob(id, reason = null) {
+  const job = getJob(id);
+  if (!job) return null;
+  rememberPurged(job.url, reason);
+  db.query("DELETE FROM jobs WHERE id = ?").run(id);
+  writeAgentFeedback(); // refresh exports so the agent learns the url is dead
+  return job;
+}
+
+// Purge by url (used by the {"__purge"} import directive so the agent can self-clean).
+export function purgeByUrl(url, reason = null) {
+  rememberPurged(url, reason);
+  const info = db.query("DELETE FROM jobs WHERE url = ?").run(url);
+  writeAgentFeedback();
+  return info.changes; // rows deleted (0 if it wasn't in the DB — still remembered)
+}
+
+export function listPurgedUrls() {
+  return db.query("SELECT url, reason, purged_at FROM purged_urls ORDER BY purged_at DESC").all();
+}
+
 export function listJobs({ includeHidden = true, status = null } = {}) {
   let sql = "SELECT * FROM jobs WHERE 1=1";
   const args = [];
   if (!includeHidden) { sql += " AND hidden = 0"; }
   if (status) { sql += " AND status = ?"; args.push(status); }
   // Ranking: pinned first, then active (not hidden / not passed / not rejected),
-  // then by score desc, then most-recently-seen.
+  // then by score desc, then most-recently-seen. (Closed postings are purged, not
+  // ranked — see purgeJob.)
   sql += `
     ORDER BY
       pinned DESC,
@@ -282,7 +393,7 @@ export function listJobs({ includeHidden = true, status = null } = {}) {
 }
 
 export function updateUserFields(id, fields) {
-  const allowed = ["status", "hidden", "pinned", "notes"];
+  const allowed = ["status", "hidden", "pinned", "notes", "pass_reason", "pass_category", "pass_scope"];
   const sets = [];
   const args = [];
   for (const k of allowed) {
@@ -295,6 +406,8 @@ export function updateUserFields(id, fields) {
   sets.push("updated_at = datetime('now')");
   db.query(`UPDATE jobs SET ${sets.join(", ")} WHERE id = ?`).run(...args, id);
   if ("status" in fields) addStatusHistory(id, fields.status, fields.statusNote);
+  // Keep the agent's feedback export current when pass/reject signals change.
+  if ("status" in fields || "pass_reason" in fields) writeAgentFeedback();
   return getJob(id);
 }
 
