@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS jobs (
   health_flag   TEXT DEFAULT 'ok',      -- ok | concern | excluded
   health_score  INTEGER,                -- 1 (failing) .. 10 (rock solid); null = unknown
   health_notes  TEXT,
+  fit_summary   TEXT,                   -- agent's one-line "why this is a fit" blurb
+  posted_at     TEXT,                   -- when the role was posted at the source (if known)
   -- USER-OWNED fields. The agent must preserve these on refresh.
   status        TEXT DEFAULT 'new',
   hidden        INTEGER DEFAULT 0,      -- send to bottom / don't show again
@@ -99,6 +101,8 @@ function ensureColumn(table, column, decl) {
   }
 }
 ensureColumn("jobs", "health_score", "INTEGER");
+ensureColumn("jobs", "fit_summary", "TEXT"); // agent's one-line "why this is a fit"
+ensureColumn("jobs", "posted_at", "TEXT");   // when the role was POSTED (source date), if known
 
 // --- Settings / search configuration ----------------------------------------
 // Everything the search + scoring uses is configurable here and editable from
@@ -194,6 +198,8 @@ export function upsertJob(payload) {
          health_flag = COALESCE(?, health_flag),
          health_score = COALESCE(?, health_score),
          health_notes = COALESCE(?, health_notes),
+         fit_summary = COALESCE(?, fit_summary),
+         posted_at = COALESCE(?, posted_at),
          last_seen_at = datetime('now'),
          updated_at = datetime('now'),
          raw_json = COALESCE(?, raw_json)
@@ -204,6 +210,7 @@ export function upsertJob(payload) {
       payload.description ?? null, payload.source ?? null, payload.employer_type ?? null,
       payload.score ?? existing.score, JSON.stringify(payload.score_reasons ?? []),
       payload.health_flag ?? null, payload.health_score ?? null, payload.health_notes ?? null,
+      payload.fit_summary ?? null, payload.posted_at ?? null,
       payload.raw_json ? JSON.stringify(payload.raw_json) : null, key
     );
     return { job: getJob(existing.id), created: false };
@@ -212,14 +219,16 @@ export function upsertJob(payload) {
   const info = db.query(
     `INSERT INTO jobs
        (dedupe_key, url, title, company, location, work_mode, salary, description,
-        source, employer_type, score, score_reasons, health_flag, health_score, health_notes, raw_json)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        source, employer_type, score, score_reasons, health_flag, health_score, health_notes,
+        fit_summary, posted_at, raw_json)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).run(
     key, payload.url ?? null, payload.title ?? null, payload.company ?? null,
     payload.location ?? null, payload.work_mode ?? null, payload.salary ?? null,
     payload.description ?? null, payload.source ?? "manual", payload.employer_type ?? "company",
     payload.score ?? 0, JSON.stringify(payload.score_reasons ?? []),
     payload.health_flag ?? "ok", payload.health_score ?? null, payload.health_notes ?? null,
+    payload.fit_summary ?? null, payload.posted_at ?? null,
     payload.raw_json ? JSON.stringify(payload.raw_json) : null
   );
   return { job: getJob(info.lastInsertRowid), created: true };

@@ -25,6 +25,22 @@ export default function App() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Auto-refresh so newly imported jobs appear without a manual reload: poll every
+  // 60s, and refresh when the tab regains focus (cheap, and catches the common
+  // "switch back to the tab" case immediately). load() only swaps the jobs array —
+  // in-progress notes live in JobCard local state, so this won't clobber typing.
+  useEffect(() => {
+    const id = setInterval(load, 60_000);
+    const onFocus = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [load]);
+
   const onUpdate = async (id, fields) => {
     await api.updateJob(id, fields);
     load();
@@ -81,7 +97,7 @@ export default function App() {
           {buried.length > 0 && (
             <div className="buried-section">
               <button className="buried-toggle" onClick={() => setShowBuried((v) => !v)}>
-                {showBuried ? "▾" : "▸"} Not interested / passed ({buried.length})
+                {showBuried ? "▾" : "▸"} Not interested / didn't get it ({buried.length})
               </button>
               {showBuried && (
                 <div className="list">
