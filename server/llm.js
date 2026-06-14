@@ -53,24 +53,30 @@ ${rawText.slice(0, 8000)}`;
 
 /**
  * Judge whether an employer looks financially shaky / struggling.
- * Returns { flag: 'ok'|'concern'|'excluded', notes }.
+ * Returns { flag: 'ok'|'concern'|'excluded', score: 1..10|null, notes }.
+ *   score: 1 = likely failing / avoid, 10 = rock solid. null when no key / parse fail.
  * Note: pass in any recent context you have (the agent can supply news snippets).
  */
 export async function assessEmployerHealth(company, context = "") {
-  if (!company) return { flag: "ok", notes: null };
+  if (!company) return { flag: "ok", score: null, notes: null };
   const prompt = `You assess employer stability for a job seeker who has repeatedly
-been burned by struggling companies. Given the company and any context, classify:
-- "excluded": clear signs of distress (recent major layoffs, down round, bankruptcy risk, sustained bad news)
-- "concern": some yellow flags or insufficient info to be confident
-- "ok": appears stable
-Return ONLY JSON: {"flag":"ok|concern|excluded","notes":"one sentence"}.
+been burned by struggling companies. Given the company and any context:
+1. Rate stability 1-10 (1 = likely failing / recent major layoffs / down round / bankruptcy
+   risk; 5 = mixed or unclear; 10 = rock solid, well-funded, growing).
+2. Map to a flag: 1-3 -> "excluded", 4-6 -> "concern", 7-10 -> "ok".
+Return ONLY JSON: {"score":<1-10 int>,"flag":"ok|concern|excluded","notes":"one sentence"}.
 
 COMPANY: ${company}
 CONTEXT: ${context || "(none provided)"}`;
   try {
     const out = await callClaude(prompt, { maxTokens: 200 });
-    return parseJsonFromText(out) || { flag: "ok", notes: null };
+    const parsed = parseJsonFromText(out);
+    if (!parsed) return { flag: "ok", score: null, notes: null };
+    // Clamp the score to a 1-10 int; leave null if the model omitted it.
+    let score = Number(parsed.score);
+    score = Number.isFinite(score) ? Math.min(10, Math.max(1, Math.round(score))) : null;
+    return { flag: parsed.flag || "ok", score, notes: parsed.notes || null };
   } catch {
-    return { flag: "ok", notes: null };
+    return { flag: "ok", score: null, notes: null };
   }
 }

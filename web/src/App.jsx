@@ -10,16 +10,18 @@ export default function App() {
   const [tab, setTab] = useState("pipeline");
   const [jobs, setJobs] = useState([]);
   const [filter, setFilter] = useState("all");
-  const [showHidden, setShowHidden] = useState(false);
+  const [showBuried, setShowBuried] = useState(false);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
 
+  // Always fetch hidden/passed too, so the "not interested" section count is honest;
+  // it just lives in its own collapsed section below the viable list.
   const load = useCallback(() => {
-    api.jobs({ includeHidden: showHidden })
+    api.jobs({ includeHidden: true })
       .then(setJobs)
       .catch((e) => setError(e.message));
     api.stats().then(setStats).catch(() => {});
-  }, [showHidden]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -28,8 +30,11 @@ export default function App() {
     load();
   };
 
-  const visible = jobs.filter((jobb) =>
-    filter === "all" ? true : jobb.status === filter);
+  const isBuried = (jb) => jb.hidden || jb.status === "passed" || jb.status === "rejected";
+  const matchesFilter = (jb) => (filter === "all" ? true : jb.status === filter);
+
+  const viable = jobs.filter((jb) => !isBuried(jb) && matchesFilter(jb));
+  const buried = jobs.filter((jb) => isBuried(jb) && matchesFilter(jb));
 
   return (
     <div className="app">
@@ -64,18 +69,29 @@ export default function App() {
                 <button key={f} className={filter === f ? "on" : ""} onClick={() => setFilter(f)}>{f}</button>
               ))}
             </div>
-            <label className="toggle">
-              <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
-              show hidden / passed
-            </label>
           </div>
 
           <div className="list">
-            {visible.length === 0 && <p className="empty">No jobs yet. Paste a posting URL above, or let the hourly agent fill this in.</p>}
-            {visible.map((jobb) => (
-              <JobCard key={jobb.id} job={jobb} onUpdate={onUpdate} />
+            {viable.length === 0 && <p className="empty">No viable jobs yet. Paste a posting URL above, or let the hourly agent fill this in.</p>}
+            {viable.map((jobb) => (
+              <JobCard key={jobb.id} job={jobb} onUpdate={onUpdate} onReload={load} />
             ))}
           </div>
+
+          {buried.length > 0 && (
+            <div className="buried-section">
+              <button className="buried-toggle" onClick={() => setShowBuried((v) => !v)}>
+                {showBuried ? "▾" : "▸"} Not interested / passed ({buried.length})
+              </button>
+              {showBuried && (
+                <div className="list">
+                  {buried.map((jobb) => (
+                    <JobCard key={jobb.id} job={jobb} onUpdate={onUpdate} onReload={load} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </main>
       )}
     </div>

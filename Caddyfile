@@ -1,0 +1,26 @@
+# Orion — local HTTPS reverse proxy
+#
+# Serves Orion at a friendly hostname instead of localhost:5176 / :3000.
+#
+# On this machine Caddy runs as a root Homebrew service and its real config is
+# /opt/homebrew/etc/Caddyfile (which also fronts aether-dev + website-dev). This
+# file is the Orion-specific block, kept in-repo for documentation; it is copied
+# into the system Caddyfile. See README "Local access" for setup.
+#
+#   1. Add to /etc/hosts:    127.0.0.1 orion.hunt
+#   2. Append the block below to /opt/homebrew/etc/Caddyfile
+#   3. Restart:              sudo /opt/homebrew/bin/brew services restart caddy
+#   4. Visit:                https://orion.hunt
+#
+# Dev points at Vite (:5176), which itself proxies /api -> the Bun API (:3000).
+# `tls internal` is required because orion.hunt is not a real public domain —
+# it makes Caddy issue a cert from its own local CA (already trusted on this Mac).
+# Vite must also list "orion.hunt" in server.allowedHosts (see web/vite.config.js).
+#
+# In production the Bun server serves the built frontend from web/dist on :3000,
+# so point reverse_proxy at localhost:3000 instead of :5176.
+
+orion.hunt {
+	tls internal
+	reverse_proxy localhost:5176
+}

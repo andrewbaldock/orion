@@ -13,7 +13,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const INCOMING = process.env.INCOMING_PATH || "./data/incoming.jsonl";
 
-export function importIncoming(path = INCOMING) {
+export async function importIncoming(path = INCOMING) {
   if (!existsSync(path)) {
     console.log("No incoming file at", path);
     return { imported: 0, created: 0 };
@@ -24,7 +24,7 @@ export function importIncoming(path = INCOMING) {
     let rec;
     try { rec = JSON.parse(line); } catch { continue; }
     if (rec.__source) { recordSource(rec.__source.name, rec.__source.url); continue; }
-    const { created: isNew } = ingest(rec);
+    const { created: isNew } = await ingest(rec); // async: may assess employer health
     if (isNew) created++;
   }
   writeFileSync(path, ""); // truncate after successful import
@@ -32,4 +32,4 @@ export function importIncoming(path = INCOMING) {
   return { imported: lines.length, created };
 }
 
-if (import.meta.main) importIncoming();
+if (import.meta.main) await importIncoming();

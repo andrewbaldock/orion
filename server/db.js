@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   score         REAL DEFAULT 0,
   score_reasons TEXT,                   -- JSON array of strings
   health_flag   TEXT DEFAULT 'ok',      -- ok | concern | excluded
+  health_score  INTEGER,                -- 1 (failing) .. 10 (rock solid); null = unknown
   health_notes  TEXT,
   -- USER-OWNED fields. The agent must preserve these on refresh.
   status        TEXT DEFAULT 'new',
@@ -86,6 +87,18 @@ CREATE INDEX IF NOT EXISTS idx_jobs_status  ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_hidden  ON jobs(hidden);
 CREATE INDEX IF NOT EXISTS idx_jobs_score   ON jobs(score);
 `);
+
+// --- Additive migrations ----------------------------------------------------
+// New scalar fields get a real column added in place; `CREATE TABLE IF NOT EXISTS`
+// alone won't touch an existing DB. This is how we add "columns" over time without
+// breaking old rows (anything ad-hoc still rides in raw_json). Idempotent.
+function ensureColumn(table, column, decl) {
+  const cols = db.query(`PRAGMA table_info(${table})`).all();
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+  }
+}
+ensureColumn("jobs", "health_score", "INTEGER");
 
 // --- Settings / search configuration ----------------------------------------
 // Everything the search + scoring uses is configurable here and editable from
@@ -179,6 +192,7 @@ export function upsertJob(payload) {
          score = ?,
          score_reasons = ?,
          health_flag = COALESCE(?, health_flag),
+         health_score = COALESCE(?, health_score),
          health_notes = COALESCE(?, health_notes),
          last_seen_at = datetime('now'),
          updated_at = datetime('now'),
@@ -189,7 +203,7 @@ export function upsertJob(payload) {
       payload.location ?? null, payload.work_mode ?? null, payload.salary ?? null,
       payload.description ?? null, payload.source ?? null, payload.employer_type ?? null,
       payload.score ?? existing.score, JSON.stringify(payload.score_reasons ?? []),
-      payload.health_flag ?? null, payload.health_notes ?? null,
+      payload.health_flag ?? null, payload.health_score ?? null, payload.health_notes ?? null,
       payload.raw_json ? JSON.stringify(payload.raw_json) : null, key
     );
     return { job: getJob(existing.id), created: false };
@@ -198,14 +212,14 @@ export function upsertJob(payload) {
   const info = db.query(
     `INSERT INTO jobs
        (dedupe_key, url, title, company, location, work_mode, salary, description,
-        source, employer_type, score, score_reasons, health_flag, health_notes, raw_json)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        source, employer_type, score, score_reasons, health_flag, health_score, health_notes, raw_json)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).run(
     key, payload.url ?? null, payload.title ?? null, payload.company ?? null,
     payload.location ?? null, payload.work_mode ?? null, payload.salary ?? null,
     payload.description ?? null, payload.source ?? "manual", payload.employer_type ?? "company",
     payload.score ?? 0, JSON.stringify(payload.score_reasons ?? []),
-    payload.health_flag ?? "ok", payload.health_notes ?? null,
+    payload.health_flag ?? "ok", payload.health_score ?? null, payload.health_notes ?? null,
     payload.raw_json ? JSON.stringify(payload.raw_json) : null
   );
   return { job: getJob(info.lastInsertRowid), created: true };

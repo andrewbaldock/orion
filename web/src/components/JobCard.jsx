@@ -1,17 +1,27 @@
 import { useState } from "react";
+import { api } from "../api.js";
 
 const PIPELINE = ["new", "interested", "applied", "phone_screen", "interview", "offer", "rejected", "passed"];
 
-export default function JobCard({ job, onUpdate }) {
+export default function JobCard({ job, onUpdate, onReload }) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(job.notes || "");
+  const [checking, setChecking] = useState(false);
   const reasons = safeParse(job.score_reasons);
   const buried = job.hidden || job.status === "passed" || job.status === "rejected";
+
+  const recheck = async () => {
+    setChecking(true);
+    try { await api.reassessHealth(job.id); onReload?.(); }
+    catch (e) { alert("Health check failed: " + e.message); }
+    finally { setChecking(false); }
+  };
 
   return (
     <div className={`card ${job.pinned ? "pinned" : ""} ${buried ? "buried" : ""} health-${job.health_flag}`}>
       <div className="card-head" onClick={() => setOpen(!open)}>
         <div className="score" title={reasons.join("\n")}>{Math.round(job.score)}</div>
+        <HealthSquare score={job.health_score} notes={job.health_notes} />
         <div className="who">
           <div className="title">{job.title || "(untitled)"} {job.employer_type === "uc" && <span className="badge uc">UC</span>} {job.employer_type === "government" && <span className="badge gov">GOV</span>}</div>
           <div className="sub">{job.company || "—"} · {job.location || "?"} · <span className={`mode ${job.work_mode}`}>{job.work_mode}</span> · <span className="src">{job.source}</span></div>
@@ -28,6 +38,7 @@ export default function JobCard({ job, onUpdate }) {
         <button onClick={() => onUpdate(job.id, { pinned: job.pinned ? 0 : 1 })}>{job.pinned ? "unpin" : "pin"}</button>
         <button onClick={() => onUpdate(job.id, { hidden: job.hidden ? 0 : 1 })}>{job.hidden ? "unhide" : "hide / sink"}</button>
         <button className="passed" onClick={() => onUpdate(job.id, { status: "passed" })}>not interested</button>
+        <button onClick={recheck} disabled={checking}>{checking ? "checking…" : "re-check employer"}</button>
       </div>
 
       {open && (
@@ -46,6 +57,22 @@ export default function JobCard({ job, onUpdate }) {
           <div className="meta">first seen {fmt(job.first_seen_at)} · last seen {fmt(job.last_seen_at)}</div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Employer-health 1–10 in a colored square: red at 1 → amber at 5 → green at 10.
+// Hue interpolates 0→120 across the range so it's a true gradient. Null = no data
+// (no key yet, or not assessed) → render nothing.
+function HealthSquare({ score, notes }) {
+  if (score == null) return null;
+  const s = Math.min(10, Math.max(1, score));
+  const hue = ((s - 1) / 9) * 120;            // 1→0° (red), 10→120° (green)
+  const bg = `hsl(${hue}, 65%, 42%)`;
+  return (
+    <div className="health-square" style={{ background: bg }}
+      title={`Employer health ${s}/10${notes ? " — " + notes : ""}`}>
+      {s}
     </div>
   );
 }

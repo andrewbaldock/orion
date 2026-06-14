@@ -5,7 +5,7 @@ import {
 } from "./db.js";
 import { scoreJob } from "./scoring.js";
 import { slurpUrl, parseJobFromHtml, classifyEmployer } from "./slurp.js";
-import { llmEnabled, extractJobWithLLM } from "./llm.js";
+import { llmEnabled, extractJobWithLLM, assessEmployerHealth } from "./llm.js";
 
 const PORT = Number(process.env.PORT || 3000);
 
@@ -50,7 +50,23 @@ const server = Bun.serve({
       // POST /api/jobs  -> manual add (also re-scores)
       if (pathname === "/api/jobs" && method === "POST") {
         const body = await req.json();
-        return json(ingest(body), 201);
+        return json(await ingest(body), 201);
+      }
+
+      // POST /api/jobs/:id/health  -> recompute employer health for this job's company
+      const healthMatch = pathname.match(/^\/api\/jobs\/(\d+)\/health$/);
+      if (healthMatch && method === "POST") {
+        const job = getJob(Number(healthMatch[1]));
+        if (!job) return json({ error: "not found" }, 404);
+        if (!llmEnabled()) return json({ error: "ANTHROPIC_API_KEY not set" }, 400);
+        if (!job.company) return json({ error: "job has no company" }, 400);
+        healthCache.delete(job.company.trim().toLowerCase()); // force a fresh look
+        const h = await lookupHealth(job.company, job.description || "");
+        const updated = upsertJob({
+          dedupe_key: job.dedupe_key,
+          health_flag: h?.flag, health_score: h?.score, health_notes: h?.notes,
+        });
+        return json(updated.job);
       }
 
       // POST /api/slurp  { url }  -> fetch + parse + store
@@ -68,7 +84,7 @@ const server = Bun.serve({
             if (llm) parsed = { ...parsed, ...llm };
           } catch (e) { console.warn("LLM slurp fallback failed:", e.message); }
         }
-        const { job, created } = ingest({ ...parsed, dedupe_key: target });
+        const { job, created } = await ingest({ ...parsed, dedupe_key: target });
         return json({ job, created }, created ? 201 : 200);
       }
 
@@ -108,9 +124,33 @@ const server = Bun.serve({
   },
 });
 
-// Score then upsert. Centralized so /slurp, /jobs POST, and the importer agree.
-export function ingest(payload) {
+// Per-company health cache so we make at most one Claude call per employer per
+// process run (a listing-per-call would be wasteful and slow). In-memory is fine
+// for the demo; a persisted cache can come later.
+const healthCache = new Map();
+
+async function lookupHealth(company, context = "") {
+  if (!company) return null;
+  const key = company.trim().toLowerCase();
+  if (healthCache.has(key)) return healthCache.get(key);
+  const result = await assessEmployerHealth(company, context);
+  healthCache.set(key, result);
+  return result;
+}
+
+// Assess health, THEN score, then upsert. Centralized so /slurp, /jobs POST, and
+// the importer agree. Health must come first because scoreJob applies the
+// "struggling employer" penalty off health_flag. Async: health may call Claude.
+export async function ingest(payload) {
   if (!payload.employer_type) payload.employer_type = classifyEmployer(payload);
+
+  // Fill employer health from Claude when enabled and not already supplied
+  // (the agent may pre-compute it). Cached per company. Degrades to nothing.
+  if (llmEnabled() && payload.company && payload.health_score == null) {
+    const h = await lookupHealth(payload.company, payload.description || "");
+    if (h) payload = { ...payload, health_flag: h.flag, health_score: h.score, health_notes: h.notes };
+  }
+
   const { score, reasons } = scoreJob(payload);
   return upsertJob({ ...payload, score, score_reasons: reasons });
 }

@@ -52,6 +52,12 @@ body { margin: 0; background: @bg; color: @ink;
 .list { margin-top: 14px; }
 .empty { color: #8a909a; font-style: italic; }
 
+/* "Not interested / passed" lives in its own collapsed section below the viable list */
+.buried-section { margin-top: 22px; border-top: 1px dashed @line; padding-top: 12px;
+  .buried-toggle { background: none; border: none; cursor: pointer; color: @muted;
+    font-size: 13px; font-weight: 600; padding: 4px 0; }
+}
+
 /* job card */
 .card {
   background: @card; border: 1px solid @line; border-radius: 12px; margin-bottom: 10px;
@@ -63,6 +69,9 @@ body { margin: 0; background: @bg; color: @ink;
 
   .card-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer;
     .score { font-weight: 700; font-size: 18px; color: @gold; min-width: 34px; text-align: center; }
+    .health-square { width: 26px; height: 26px; border-radius: 6px; flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.35); }
     .who { flex: 1;
       .title { font-weight: 650; font-size: 15px; }
       .sub { font-size: 12.5px; color: @muted; margin-top: 2px; }

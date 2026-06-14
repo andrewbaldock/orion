@@ -16,6 +16,8 @@ export const api = {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(fields),
     }).then(j),
+  reassessHealth: (id) =>
+    fetch(`/api/jobs/${id}/health`, { method: "POST" }).then(j),
   slurp: (url) =>
     fetch("/api/slurp", {
       method: "POST",
