@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+bun.lockb
+
+# build output
+web/dist/
+
+# database & runtime data (keep these local — they hold YOUR job history)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/incoming.jsonl
+
+# env
+.env
+.env.local
+
+# os / editor
+.DS_Store
+*.log
+.vscode/
+.idea/

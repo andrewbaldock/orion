@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="600">
+<title>Frontend / React Job Tracker</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: #f7f8fa; color: #1a1d21;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+.wrap { max-width: 920px; margin: 0 auto; padding: 24px 20px 64px; }
+header h1 { font-size: 24px; margin: 0 0 4px; }
+.meta { color: #5c636e; font-size: 13px; margin-bottom: 4px; }
+.crit { background:#fff; border:1px solid #e6e8eb; border-radius:10px; padding:14px 16px; font-size:13.5px; margin:14px 0 22px; }
+.crit b { color:#1a1d21; }
+.crit .tag { display:inline-block; background:#eef1f5; border-radius:6px; padding:2px 8px; margin:2px 3px 2px 0; font-size:12px; }
+.crit .no { background:#fdecec; color:#a01919; }
+h2 { font-size:16px; margin:26px 0 10px; display:flex; align-items:center; gap:8px; }
+.card { background:#fff; border:1px solid #e6e8eb; border-radius:10px; padding:14px 16px; margin-bottom:10px; }
+.card.top { border-left:4px solid #d98c00; }
+.rank { font-weight:700; color:#d98c00; margin-right:6px; }
+.role { font-weight:650; font-size:15px; }
+.co { color:#3a3f47; }
+.why { font-size:13px; color:#5c636e; margin-top:5px; }
+.pill { display:inline-block; font-size:11.5px; border-radius:20px; padding:2px 9px; margin-left:6px; vertical-align:middle; }
+.p-bay { background:#e7f0ff; color:#1f5bb5; }
+.p-rem { background:#e6f7ee; color:#1d7a44; }
+.p-uc  { background:#f3e8ff; color:#6b21a8; }
+.p-gov { background:#fff2db; color:#9a6400; }
+a { color:#1f5bb5; text-decoration:none; }
+a:hover { text-decoration:underline; }
+.src-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+.src { background:#fff; border:1px solid #e6e8eb; border-radius:10px; padding:12px 14px; }
+.src h3 { font-size:13px; margin:0 0 8px; text-transform:uppercase; letter-spacing:.04em; color:#5c636e; }
+.src ul { margin:0; padding-left:16px; font-size:13.5px; }
+.src li { margin:3px 0; }
+.note { font-size:12.5px; color:#5c636e; background:#f0f2f5; border-radius:10px; padding:12px 14px; margin-top:18px; }
+.empty { color:#8a909a; font-style:italic; font-size:13.5px; }
+footer { margin-top:30px; font-size:12px; color:#8a909a; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧭 Frontend / React Job Tracker</h1>
+    <div class="meta">Last refreshed: <b>Jun 13, 2026</b> · agent re-searches hourly · page auto-reloads every 10 min · ranked best-to-jump-on first</div>
+  </header>
+
+  <div class="crit">
+    <b>What I'm hunting:</b>
+    <span class="tag">Frontend / React</span><span class="tag">JS · CSS/LESS</span>
+    &nbsp;|&nbsp; <b>Location:</b>
+    <span class="tag">SF Bay Area (hybrid / onsite)</span><span class="tag">US (fully remote)</span>
+    <br>
+    <b>Prioritized employers:</b>
+    <span class="tag">UC Berkeley</span><span class="tag">UCSF</span><span class="tag">UC Santa Cruz</span>
+    <span class="tag">City / county gov (retirement)</span>
+    &nbsp;|&nbsp;
+    <span class="tag no">Excludes struggling / shaky companies</span>
+  </div>
+
+  <h2>🔥 Jump on these first</h2>
+
+  <div class="card top">
+    <span class="rank">1.</span><span class="role">Senior Front-End Engineer</span> — <span class="co">Estuary</span>
+    <span class="pill p-rem">Remote (US)</span>
+    <div class="why">Real-time React + data-viz observability work; strong React/TS match. Posted in HN "Who's Hiring" (June 2026). <a href="https://hnhiring.com/june-2026" target="_blank">View on HN Hiring →</a></div>
+  </div>
+
+  <div class="card top">
+    <span class="rank">2.</span><span class="role">Staff Frontend / Design Systems Engineer</span> — <span class="co">Seeq</span>
+    <span class="pill p-rem">Remote (US)</span>
+    <div class="why">React + Tailwind design-systems role at an established, funded company. Multiple frontend openings. <a href="https://hnhiring.com/june-2026" target="_blank">View on HN Hiring →</a></div>
+  </div>
+
+  <div class="card top">
+    <span class="rank">3.</span><span class="role">Web Developer / Sr IS Programmer Analyst</span> — <span class="co">City &amp; County of San Francisco</span>
+    <span class="pill p-gov">Gov · Bay Area</span>
+    <div class="why">Government role with pension/retirement benefits you flagged. Check live status on the city portal. <a href="https://careers.sf.gov/" target="_blank">careers.sf.gov →</a></div>
+  </div>
+
+  <div class="card">
+    <span class="role">More ranked listings populate here on the next refresh.</span>
+    <div class="why empty">Each run pulls fresh postings from all sources below, screens out shaky employers, and re-ranks. The strongest matches rise to the top.</div>
+  </div>
+
+  <h2>📋 Sources I'm tracking</h2>
+  <div class="src-grid">
+    <div class="src">
+      <h3>Bay Area — hybrid / onsite</h3>
+      <ul>
+        <li><a href="https://www.builtinsf.com/jobs/dev-engineering/front-end" target="_blank">Built In SF — Frontend</a></li>
+        <li><a href="https://www.indeed.com/q-react-developer-l-san-francisco-bay-area,-ca-jobs.html" target="_blank">Indeed — React, Bay Area</a></li>
+        <li><a href="https://www.glassdoor.com/Job/san-francisco-front-end-developer-jobs-SRCH_IL.0,13_IC1147401_KO14,33.htm" target="_blank">Glassdoor — Frontend, SF</a></li>
+        <li><a href="https://www.linkedin.com/jobs/search/?keywords=react%20frontend&location=San%20Francisco%20Bay%20Area&f_WT=3" target="_blank">LinkedIn — Bay Area hybrid</a></li>
+      </ul>
+    </div>
+    <div class="src">
+      <h3>US — fully remote</h3>
+      <ul>
+        <li><a href="https://reactjobs.io/jobs/reactjs/remote" target="_blank">ReactJobs.io — Remote React</a></li>
+        <li><a href="https://wellfound.com/role/r/react-developer" target="_blank">Wellfound — React Developer</a></li>
+        <li><a href="https://arc.dev/remote-jobs/reactjs" target="_blank">Arc.dev — Remote React</a></li>
+        <li><a href="https://www.linkedin.com/jobs/search/?keywords=react%20frontend&f_WT=2&location=United%20States" target="_blank">LinkedIn — Remote US</a></li>
+      </ul>
+    </div>
+    <div class="src">
+      <h3>UC schools (priority)</h3>
+      <ul>
+        <li><a href="https://careerspub.universityofcalifornia.edu/" target="_blank">UC systemwide careers</a></li>
+        <li><a href="https://jobs.berkeley.edu/" target="_blank">UC Berkeley jobs</a></li>
+        <li><a href="https://ucsf.wd5.myworkdayjobs.com/UCSF_Jobs" target="_blank">UCSF careers</a></li>
+        <li><a href="https://careers.ucsc.edu/" target="_blank">UC Santa Cruz jobs</a></li>
+      </ul>
+    </div>
+    <div class="src">
+      <h3>Government (retirement)</h3>
+      <ul>
+        <li><a href="https://careers.sf.gov/" target="_blank">City &amp; County of SF</a></li>
+        <li><a href="https://www.jobapscloud.com/sf/" target="_blank">SF Job Opportunities portal</a></li>
+        <li><a href="https://www.governmentjobs.com/careers/oaklandca" target="_blank">City of Oakland</a></li>
+        <li><a href="https://www.calcareers.ca.gov/" target="_blank">CalCareers (State of CA)</a></li>
+      </ul>
+    </div>
+    <div class="src">
+      <h3>Aggregators</h3>
+      <ul>
+        <li><a href="https://hnhiring.com/june-2026" target="_blank">HN "Who's Hiring" (current)</a></li>
+        <li><a href="https://hnhiring.com/technologies/react" target="_blank">HN — React filter</a></li>
+        <li><a href="https://www.indeed.com/q-React-l-San-Francisco,-CA-jobs.html" target="_blank">Indeed — React</a></li>
+        <li><a href="https://www.linkedin.com/jobs/" target="_blank">LinkedIn Jobs</a></li>
+      </ul>
+    </div>
+    <div class="src">
+      <h3>🔎 Newly discovered</h3>
+      <ul>
+        <li class="empty">The agent keeps hunting for new boards &amp; niche sources and adds them here as it finds them.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>How this works.</b> A scheduled agent runs every hour: it searches every source above, screens out struggling/shaky employers, ranks the best matches to the top, discovers new listing sources over time, and rewrites this file. This page reloads itself every 10 minutes, so it always shows the latest. You can also trigger a search anytime by messaging me — just say "run my job search."
+  </div>
+
+  <footer>Frontend / React Job Tracker · self-updating · built for Andrew</footer>
+</div>
+</body>
+</html>

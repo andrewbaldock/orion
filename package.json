@@ -1,0 +1,21 @@
+{
+  "name": "orion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Orion — a one-stop job-hunting machine. Persistent DB of every listing, per-job progress tracking, URL slurp, and an hourly discovery agent.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run dev:server",
+    "dev:server": "bun --watch server/index.js",
+    "dev:web": "cd web && bun run dev",
+    "build:web": "cd web && bun run build",
+    "start": "bun server/index.js",
+    "import": "bun server/import.js",
+    "test": "bun test"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}

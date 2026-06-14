@@ -1,0 +1,109 @@
+@bg: #f7f8fa;
+@card: #ffffff;
+@ink: #1a1d21;
+@muted: #5c636e;
+@line: #e6e8eb;
+@blue: #1f5bb5;
+@gold: #d98c00;
+@green: #1d7a44;
+@purple: #6b21a8;
+@red: #a01919;
+
+* { box-sizing: border-box; }
+body { margin: 0; background: @bg; color: @ink;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+.app { max-width: 960px; margin: 0 auto; padding: 0 16px 64px; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0; position: sticky; top: 0; background: @bg; z-index: 5;
+  border-bottom: 1px solid @line;
+  .brand { font-size: 18px; .tag { font-size: 12px; color: @muted; } }
+  nav button {
+    background: none; border: none; font-size: 14px; padding: 6px 12px; cursor: pointer;
+    color: @muted; border-radius: 8px;
+    &.on { background: #eef1f5; color: @ink; font-weight: 600; }
+  }
+}
+
+.banner { padding: 10px 14px; border-radius: 8px; margin: 12px 0;
+  &.err { background: #fdecec; color: @red; } }
+
+/* slurp bar */
+.slurp { display: flex; gap: 8px; align-items: center; margin: 18px 0; flex-wrap: wrap;
+  input[type=url] { flex: 1; min-width: 240px; padding: 10px 12px; border: 1px solid @line;
+    border-radius: 10px; font-size: 14px; }
+  button { padding: 10px 16px; border: none; border-radius: 10px; background: @blue;
+    color: #fff; font-weight: 600; cursor: pointer; &:disabled { opacity: .6; } }
+  .slurp-msg { font-size: 13px; color: @muted; width: 100%; }
+}
+
+.stats { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: @muted; margin: 8px 0 14px;
+  .chip { background: #eef1f5; border-radius: 20px; padding: 2px 10px; } }
+
+.controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  .filters button { background: none; border: 1px solid @line; border-radius: 20px;
+    padding: 4px 12px; margin-right: 6px; cursor: pointer; font-size: 13px;
+    &.on { background: @ink; color: #fff; border-color: @ink; } }
+  .toggle { font-size: 13px; color: @muted; }
+}
+
+.list { margin-top: 14px; }
+.empty { color: #8a909a; font-style: italic; }
+
+/* job card */
+.card {
+  background: @card; border: 1px solid @line; border-radius: 12px; margin-bottom: 10px;
+  overflow: hidden;
+  &.pinned { border-left: 4px solid @gold; }
+  &.buried { opacity: .55; }
+  &.health-excluded { border-left: 4px solid @red; }
+  &.health-concern { border-left: 4px solid @gold; }
+
+  .card-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer;
+    .score { font-weight: 700; font-size: 18px; color: @gold; min-width: 34px; text-align: center; }
+    .who { flex: 1;
+      .title { font-weight: 650; font-size: 15px; }
+      .sub { font-size: 12.5px; color: @muted; margin-top: 2px; }
+    }
+    .status { border: 1px solid @line; border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+  }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 6px; vertical-align: middle;
+    &.uc { background: #f3e8ff; color: @purple; } &.gov { background: #fff2db; color: @gold; } }
+  .mode { &.remote { color: @green; } &.hybrid { color: @blue; } &.onsite { color: @muted; } }
+
+  .card-actions { display: flex; gap: 8px; padding: 0 14px 12px; flex-wrap: wrap;
+    a, button { font-size: 12.5px; background: #f0f2f5; border: none; border-radius: 8px;
+      padding: 5px 10px; cursor: pointer; color: @ink; text-decoration: none; }
+    button.passed { color: @red; }
+  }
+  .card-body { padding: 0 14px 14px; border-top: 1px solid @line;
+    .salary { font-weight: 600; }
+    .health { color: @red; font-size: 13px; }
+    .desc { font-size: 13.5px; color: #34383d; }
+    details summary { cursor: pointer; font-size: 13px; color: @muted; }
+    .notes { display: block; margin-top: 10px; span { display: block; font-size: 12px; color: @muted; }
+      textarea { width: 100%; min-height: 60px; border: 1px solid @line; border-radius: 8px; padding: 8px; } }
+    .meta { font-size: 11.5px; color: #9097a0; margin-top: 8px; }
+  }
+}
+
+/* settings */
+.settings { padding-top: 16px;
+  h2 { margin: 0 0 4px; } .hint { color: @muted; font-size: 13px; }
+  section { background: @card; border: 1px solid @line; border-radius: 12px; padding: 14px 16px; margin: 14px 0;
+    h3 { margin: 0 0 12px; font-size: 15px; } }
+  .field { display: block; margin-bottom: 12px;
+    span { display: block; font-size: 12.5px; color: @muted; margin-bottom: 4px; }
+    textarea { width: 100%; min-height: 70px; }
+    textarea, input { border: 1px solid @line; border-radius: 8px; padding: 8px; font-size: 13.5px; } }
+  .check { display: block; font-size: 13.5px; margin: 6px 0; input { margin-right: 8px; } }
+  .source-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
+    .src-name { width: 200px; } .src-url { flex: 1; }
+    input[type=text], input:not([type]) { border: 1px solid @line; border-radius: 8px; padding: 6px 8px; } }
+  .add { margin-top: 8px; background: #f0f2f5; border: none; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  .save-row { margin-top: 16px; display: flex; align-items: center; gap: 12px;
+    .save { background: @blue; color: #fff; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 600; cursor: pointer; }
+    .ok { color: @green; } }
+}
