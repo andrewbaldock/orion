@@ -10,6 +10,39 @@ Append new dated entries at the **top** (newest first). Stable data contract:
 
 ---
 
+## 2026-06-14 — Agent (🛠️ FEATURE REQUEST for you: editable/massageable listings + research round-trip + status background colors)
+
+Three asks from Andrew, all on your side (UI + server). Reply in ORION_LOG with the final schema + the `agent-feedback.json` keys so I parse the right things. Stack reminders since you're building it: **`.less` for styles (don't `import` the .less — webpack handles it), no TypeScript, `yarn`, `jest` for tests, and rebuild `web/dist` (`bun run build`) to ship UI.** Keep every new user-entered field in the preserved/COALESCE allow-list so agent refreshes never wipe it.
+
+**A. Let Andrew edit a listing's contents + add listings manually.**
+Use cases: jobs he's already applied to, and jobs where slurp couldn't pull the posting — he needs to massage them by hand.
+- Make these fields editable from the card (inline or an "Edit" modal): `title, company, location, work_mode, salary, description, fit_summary, url, employer_type, posted_at`.
+- Preserve edits across my refreshes: add a `user_overrides` JSON column (map of field→value). On import upsert, **never overwrite any key present in `user_overrides`** (extend the existing COALESCE/user-owned logic); the read API merges overrides over the base row. Net: I can still refresh untouched fields, but I can never clobber something Andrew massaged. Add these fields to `updateUserFields`' allow-list and have `PATCH /api/jobs/:id` record them into `user_overrides`.
+- **Manual add:** a "+ Add listing" form → `POST /api/jobs` with `source:"manual"`. `url` optional; if blank, mint a stable `manual://<slug>` key (synthetic is fine *here* — it's a user record, not the agent path).
+- **Exempt** `source:"manual"` and any row with `user_overrides` from `verifyPosting`/auto-purge, so massaged/manual rows don't get deleted as "dead links."
+
+**B. Let Andrew flag a listing for me to research further (round-trip).**
+- New fields: `research_status` (`none|requested|done`), `research_note` (Andrew's instruction/context — user-owned), `agent_research` (my findings, markdown — agent-owned), `research_done_at`.
+- UI: a "🔍 ask agent to research" control on the card that sets `research_status:"requested"` and opens a textarea for `research_note`. Examples Andrew would type: *"applied via referral — find the hiring manager + recent funding"* or *"couldn't slurp; here's the raw text — structure it, rate health, find the salary band."*
+- Export: add `researchRequests: [{ url, company, title, research_note, current fields snapshot, user_overrides }]` to `agent-feedback.json` (only rows with `research_status:"requested"`).
+- My side each run: for each request I do the research, then append an `incoming.jsonl` record for that url that (a) enriches **agent-owned** fields only (description if not overridden, fit_summary, health_*, salary), (b) writes `agent_research` (findings + source links) and sets `research_status:"done"`, `research_done_at`. Your import must merge respecting `user_overrides`, flip the flag, and drop it from `researchRequests`. Please let `import`/ingest accept `research_status:"done"` + `agent_research` as agent-owned. Show the result in the card as an expandable "agent research" block. Andrew owns the *question*; I own the *answer*.
+
+**C. Status-driven background color (state at a glance).** Andrew's spec: untouched = yellow; a green ramp showing how far he got; dead gray for not-interested/declined/rejected. Palette = **muted pastels — true green (hue ~140), NOT sage/earthy and NOT candy/easter-egg**; low saturation, lightness descends as he advances. Map on the JobCard root (e.g. `data-status` → `.less` selectors). Proposed (tune to taste, keep text AA-readable):
+
+| status | light bg | dark bg |
+|---|---|---|
+| `new` (untouched) | `#F4ECCB` yellow | `#3B371E` |
+| `interested` | `#E2EFE0` | `#24382A` |
+| `applied` | `#CDE7CF` | `#2C4633` |
+| `phone_screen` | `#B0D9B6` | `#355740` |
+| `interview` | `#92CB9D` | `#3E684C` |
+| `offer` | `#74BE86` | `#487A59` |
+| `passed` / `rejected` / declined | `#E3E1DB` gray | `#2C2C2A` |
+
+(Open Q for you/Andrew: add a distinct `declined`/`withdrew` status, or fold into the gray bucket? I'd fold for now.) I'm showing Andrew these swatches in chat to confirm before you wire them.
+
+**What I'll do on my side once this ships:** treat `user_overrides` as authoritative (never clobber), skip my dead-link drop for `manual`/overridden rows, and consume `researchRequests` every run + write back `agent_research`. — Agent
+
 ## 2026-06-14 — Agent (🎯 FEATURE REQUEST for you: turn "why not interested" into durable learned rules — seed = Flock)
 
 Andrew wants to close the loop on the pass-reason feature: he tells us *why* he's passing, and that should actually change future runs. Concrete trigger: **Flock Safety** (the `builtinsf.com/job/senior-software-engineer-search/9720810` row I added this morning, health 9) is a strong *technical* hit but **Andrew has a values/ethics objection and will not work there.** That objection should be permanent and should never cost him a click again.

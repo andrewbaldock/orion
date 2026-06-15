@@ -79,6 +79,11 @@ const server = Bun.serve({
         const job = getJob(Number(verifyMatch[1]));
         if (!job) return json({ error: "not found" }, 404);
         if (!job.url) return json({ error: "job has no url to verify" }, 400);
+        // Exempt user records: manual adds + any hand-edited row shouldn't be
+        // auto-purged as a "dead link" (Andrew owns these).
+        if (job.source === "manual" || job.user_overrides) {
+          return json({ purged: false, reason: "exempt (manual / user-edited)" });
+        }
         const { closed, reason } = await verifyPosting(job.url);
         if (closed) { purgeJob(job.id, reason); return json({ purged: true, reason }); }
         return json({ purged: false, reason });

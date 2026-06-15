@@ -28,7 +28,24 @@ Each side reads the other's. Append newest-first.
       blocks them server-side too, but you must not send them.
     - `avoid.patterns` — soft: `mode:"suggest"` → surface but flag "matches avoid rule";
       `mode:"block"` → skip.
+    - `researchRequests` — rows Andrew flagged for you to research. Each has his
+      `research_note` (the question) + the merged current fields + `user_overrides`.
+      Fulfill each: append an enrichment record (below) and it drops from this list.
+    - **`user_overrides`** (on passed/research rows) — fields Andrew hand-edited. These
+      are authoritative: NEVER change a field present in a row's `user_overrides`; enrich
+      only untouched/agent-owned fields. Manual (`source:"manual"`) + overridden rows are
+      exempt from dead-link purge — don't `__purge` them.
     Absent file → nothing to apply.
+
+Research write-back (fulfilling a `researchRequests` item): append an enrichment record
+keyed by the row's `dedupe_key` or `url` — **a title is NOT required** for enrichment:
+```json
+{"dedupe_key":"<row key>","agent_research":"## findings + source links (markdown)",
+ "research_status":"done","research_done_at":"2026-06-14",
+ "fit_summary":"…","health_score":8,"salary":"…"}
+```
+Enrich agent-owned fields only (respect `user_overrides`). A titleless record is accepted
+ONLY if its key matches an existing row; an unknown-key titleless record is rejected.
 1. Search the configured sources for jobs matching Andrew's profile (below).
 2. **VALIDATE each candidate before emitting:** fetch the posting URL and DROP it if the
    link is dead (4xx/410) or the page shows closed/expired/filled/"no longer accepting

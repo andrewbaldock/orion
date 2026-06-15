@@ -29,7 +29,25 @@ export default function JobCard({ job, onUpdate, onReload }) {
   const [reason, setReason] = useState(job.pass_reason || "");
   const [checking, setChecking] = useState(false);
   const [askReason, setAskReason] = useState(false); // prompt for "why" right after passing
+  const [editing, setEditing] = useState(false);     // inline edit mode for listing fields
+  const [draft, setDraft] = useState(null);
+  const [askResearch, setAskResearch] = useState(false);
+  const [rNote, setRNote] = useState(job.research_note || "");
   const reasonRef = useRef(null);
+
+  const EDITABLE = ["title", "company", "location", "work_mode", "salary", "description", "fit_summary", "url", "employer_type", "posted_at"];
+  const startEdit = () => { setDraft(Object.fromEntries(EDITABLE.map((k) => [k, job[k] ?? ""]))); setEditing(true); setOpen(true); };
+  const saveEdit = () => {
+    // Only send fields that actually changed → recorded into user_overrides server-side.
+    const patch = {};
+    for (const k of EDITABLE) if ((draft[k] ?? "") !== (job[k] ?? "")) patch[k] = draft[k];
+    if (Object.keys(patch).length) onUpdate(job.id, patch);
+    setEditing(false);
+  };
+  const requestResearch = () => {
+    onUpdate(job.id, { research_status: "requested", research_note: rNote });
+    setAskResearch(false);
+  };
   const reasons = safeParse(job.score_reasons);
   const buried = job.hidden || job.status === "passed" || job.status === "rejected";
   const showReason = buried || askReason; // reason prompt shows once buried OR just-passed
@@ -70,7 +88,8 @@ export default function JobCard({ job, onUpdate, onReload }) {
   };
 
   return (
-    <div className={`card ${job.pinned ? "pinned" : ""} ${buried ? "buried" : ""} health-${job.health_flag}`}>
+    <div className={`card ${job.pinned ? "pinned" : ""} ${buried ? "buried" : ""} health-${job.health_flag}`}
+      data-status={job.hidden ? "passed" : job.status}>
       <div className="card-head" onClick={() => setOpen(!open)}>
         <div className="score" title={reasons.join("\n")}>{Math.round(job.score)}</div>
         <HealthSquare score={job.health_score} notes={job.health_notes} />
@@ -93,13 +112,46 @@ export default function JobCard({ job, onUpdate, onReload }) {
         <button onClick={() => onUpdate(job.id, { hidden: job.hidden ? 0 : 1 })}>{job.hidden ? "unhide" : "hide / sink"}</button>
         <button className="passed" onClick={passWithReason}>not interested</button>
         <button onClick={recheck} disabled={checking}>{checking ? "checking…" : "re-check employer"}</button>
-        {job.url && !job.url.startsWith("hn://") && (
+        {job.url && !job.url.startsWith("hn://") && job.source !== "manual" && !job.user_overrides && (
           <button onClick={verify} disabled={verifying}>{verifying ? "verifying…" : "verify still open"}</button>
         )}
+        <button onClick={editing ? saveEdit : startEdit}>{editing ? "save edits" : "edit"}</button>
+        <button onClick={() => { setAskResearch((v) => !v); setOpen(true); }}>🔍 research</button>
       </div>
 
       {open && (
         <div className="card-body">
+          {editing && (
+            <div className="edit-form">
+              <div className="edit-head">Edit listing <em>your edits override the agent's data and survive refreshes</em></div>
+              {EDITABLE.map((k) => (
+                <label key={k} className="edit-field">
+                  <span>{k.replace("_", " ")}</span>
+                  {k === "description" || k === "fit_summary"
+                    ? <textarea value={draft[k]} onChange={(e) => setDraft({ ...draft, [k]: e.target.value })} />
+                    : <input value={draft[k]} onChange={(e) => setDraft({ ...draft, [k]: e.target.value })} />}
+                </label>
+              ))}
+              <div className="edit-actions">
+                <button className="save" onClick={saveEdit}>save edits</button>
+                <button onClick={() => setEditing(false)}>cancel</button>
+              </div>
+            </div>
+          )}
+          {askResearch && (
+            <div className="research-req">
+              <span>🔍 ask the agent to research this <em>e.g. "find the hiring manager + recent funding" or "couldn't slurp — structure this + find salary"</em></span>
+              <textarea value={rNote} onChange={(e) => setRNote(e.target.value)} placeholder="what should the agent dig up?" />
+              <button onClick={requestResearch}>request research</button>
+              {job.research_status === "requested" && <span className="r-status">⏳ requested — the agent will research on its next run</span>}
+            </div>
+          )}
+          {job.agent_research && (
+            <details className="agent-research" open>
+              <summary>🔍 agent research{job.research_done_at ? ` · ${fmt(job.research_done_at)}` : ""}</summary>
+              <div className="ar-body">{job.agent_research}</div>
+            </details>
+          )}
           {job.salary && <p className="salary">💰 {job.salary}</p>}
           {job.fit_summary && <p className="fit-full">{job.fit_summary}</p>}
           {job.health_notes && (

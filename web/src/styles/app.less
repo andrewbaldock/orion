@@ -58,6 +58,37 @@ body { margin: 0; background: @bg; color: @ink;
 .list { margin-top: 14px; }
 .empty { color: #8a909a; font-style: italic; }
 
+/* manual add listing */
+.add-listing-toggle { background: none; border: 1px dashed @line; border-radius: 8px;
+  padding: 6px 12px; margin: 8px 0; cursor: pointer; color: @muted; font-size: 13px; }
+.add-listing { background: @card; border: 1px solid @line; border-radius: 12px; padding: 14px 16px; margin: 10px 0;
+  .al-head { font-weight: 600; margin-bottom: 10px; }
+  .al-field { display: block; margin-bottom: 8px;
+    span { display: block; font-size: 12px; color: @muted; margin-bottom: 3px; }
+    input, textarea { width: 100%; border: 1px solid @line; border-radius: 8px; padding: 7px 9px; font-size: 13.5px; } }
+  .al-actions { display: flex; gap: 8px; margin-top: 6px;
+    .save { background: @blue; color: #fff; border: none; border-radius: 8px; padding: 7px 16px; font-weight: 600; cursor: pointer; }
+    button { background: #f0f2f5; border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; } }
+}
+
+/* in-card edit form + research */
+.edit-form { background: #fafbfc; border: 1px solid @line; border-radius: 10px; padding: 12px; margin-bottom: 10px;
+  .edit-head { font-weight: 600; font-size: 13px; margin-bottom: 8px; em { font-weight: 400; color: @muted; font-style: normal; } }
+  .edit-field { display: block; margin-bottom: 7px;
+    span { display: block; font-size: 11.5px; color: @muted; margin-bottom: 2px; }
+    input, textarea { width: 100%; border: 1px solid @line; border-radius: 7px; padding: 6px 8px; font-size: 13px; } }
+  .edit-actions { display: flex; gap: 8px; margin-top: 4px;
+    .save { background: @blue; color: #fff; border: none; border-radius: 8px; padding: 6px 14px; font-weight: 600; cursor: pointer; }
+    button { background: #f0f2f5; border: none; border-radius: 8px; padding: 6px 12px; cursor: pointer; } } }
+.research-req { background: #f3f7ff; border: 1px solid #d6e4fb; border-radius: 10px; padding: 12px; margin-bottom: 10px;
+  > span { display: block; font-size: 12.5px; color: #34507a; margin-bottom: 6px; em { font-style: normal; color: @muted; } }
+  textarea { width: 100%; min-height: 44px; border: 1px solid @line; border-radius: 8px; padding: 8px; }
+  button { margin-top: 6px; background: @blue; color: #fff; border: none; border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+  .r-status { display: block; margin-top: 6px; font-size: 12px; color: @muted; } }
+.agent-research { background: #f6fbf7; border: 1px solid #cfe8d4; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px;
+  summary { cursor: pointer; font-weight: 600; font-size: 13px; color: @green; }
+  .ar-body { white-space: pre-wrap; font-size: 13px; color: #2c3a30; margin-top: 6px; } }
+
 /* "Not interested / passed" lives in its own collapsed section below the viable list */
 .buried-section { margin-top: 22px; border-top: 1px dashed @line; padding-top: 12px;
   .buried-toggle { background: none; border: none; cursor: pointer; color: @muted;
@@ -68,6 +99,16 @@ body { margin: 0; background: @bg; color: @ink;
 .card {
   background: @card; border: 1px solid @line; border-radius: 12px; margin-bottom: 10px;
   overflow: hidden;
+  /* Status-at-a-glance background: untouched = warm yellow; a muted-pastel TRUE-green
+     ramp (hue ~140, low sat, lightness descends) as Andrew advances; dead gray for
+     not-interested / didn't-get-it. Dark-mode values noted for when a theme lands. */
+  &[data-status="new"]          { background: #F4ECCB; } /* dark: #3B371E */
+  &[data-status="interested"]   { background: #E2EFE0; } /* dark: #24382A */
+  &[data-status="applied"]      { background: #CDE7CF; } /* dark: #2C4633 */
+  &[data-status="phone_screen"] { background: #B0D9B6; } /* dark: #355740 */
+  &[data-status="interview"]    { background: #92CB9D; } /* dark: #3E684C */
+  &[data-status="offer"]        { background: #74BE86; } /* dark: #487A59 */
+  &[data-status="passed"], &[data-status="rejected"] { background: #E3E1DB; } /* dark: #2C2C2A */
   &.pinned { border-left: 4px solid @gold; }
   &.buried { opacity: .55; }
   &.health-excluded { border-left: 4px solid @red; }

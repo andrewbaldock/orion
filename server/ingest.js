@@ -5,7 +5,7 @@
 // Lives in its own module (not index.js) so the importer and tests can use it
 // without starting the HTTP server.
 
-import { upsertJob, recordSource, purgeByUrl, getAvoid } from "./db.js";
+import { upsertJob, recordSource, purgeByUrl, getAvoid, jobExistsByKey } from "./db.js";
 import { scoreJob } from "./scoring.js";
 import { classifyEmployer } from "./slurp.js";
 import { llmEnabled, assessEmployerHealth } from "./llm.js";
@@ -73,7 +73,16 @@ export async function ingestBatch(records) {
       purgeByUrl(rec.__purge.url, rec.__purge.reason || "agent purge");
       purged++; continue;
     }
-    if (!rec || (!rec.title && !rec.url)) { skipped++; errors.push({ line: i + 1, error: "no title or url" }); continue; }
+    // A record needs a way to identify the row. Normally title/url; but an
+    // enrichment/research write-back targets an existing row by dedupe_key (or url)
+    // and carries no title — allow those through to upsert (COALESCE updates fields).
+    const hasKey = rec && (rec.dedupe_key || rec.url);
+    if (!rec || (!rec.title && !hasKey)) { skipped++; errors.push({ line: i + 1, error: "no title, url, or dedupe_key" }); continue; }
+    // A titleless record is an enrichment/research write-back — only valid if it
+    // targets an EXISTING row. Don't let it INSERT a junk titleless job.
+    if (!rec.title && !jobExistsByKey(rec.dedupe_key || rec.url)) {
+      skipped++; errors.push({ line: i + 1, error: "enrichment for unknown row (no matching dedupe_key)" }); continue;
+    }
     try {
       const { created: isNew, blocked } = await ingest(rec);
       if (blocked) { skipped++; continue; } // avoided employer — silently dropped

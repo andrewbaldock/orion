@@ -10,6 +10,8 @@ export const api = {
     return fetch(`/api/jobs${q ? "?" + q : ""}`).then(j);
   },
   job: (id) => fetch(`/api/jobs/${id}`).then(j),
+  addJob: (fields) =>
+    fetch("/api/jobs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(fields) }).then(j),
   updateJob: (id, fields) =>
     fetch(`/api/jobs/${id}`, {
       method: "PATCH",

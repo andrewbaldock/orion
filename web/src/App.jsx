@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import JobCard from "./components/JobCard.jsx";
 import SlurpBar from "./components/SlurpBar.jsx";
 import Settings from "./components/Settings.jsx";
+import AddListing from "./components/AddListing.jsx";
 import Logo from "./components/Logo.jsx";
 import { startHotAlert, stopHotAlert, onAlertChange } from "./favicon.js";
 
@@ -104,6 +105,7 @@ export default function App() {
       ) : (
         <main className="pipeline">
           <SlurpBar onSlurped={load} />
+          <AddListing onAdded={load} />
 
           {stats && (
             <div className="stats">

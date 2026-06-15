@@ -120,6 +120,11 @@ ensureColumn("jobs", "posted_at", "TEXT");   // when the role was POSTED (source
 ensureColumn("jobs", "pass_reason", "TEXT"); // user-owned: why Andrew passed (agent learns from it)
 ensureColumn("jobs", "pass_category", "TEXT"); // user-owned: ethics|comp|location|seniority|stack|stability|role-type|other
 ensureColumn("jobs", "pass_scope", "TEXT");    // user-owned: posting|company|similar
+ensureColumn("jobs", "user_overrides", "TEXT"); // JSON {field:value} Andrew hand-edited; agent refresh NEVER clobbers these
+ensureColumn("jobs", "research_status", "TEXT DEFAULT 'none'"); // none|requested|done
+ensureColumn("jobs", "research_note", "TEXT");  // user-owned: Andrew's research instruction
+ensureColumn("jobs", "agent_research", "TEXT"); // agent-owned: findings (markdown)
+ensureColumn("jobs", "research_done_at", "TEXT");
 
 // --- Settings / search configuration ----------------------------------------
 // Everything the search + scoring uses is configurable here and editable from
@@ -253,9 +258,13 @@ export function writeAgentFeedback() {
     ).all();
     const purgedUrls = db.query("SELECT url, reason, purged_at FROM purged_urls ORDER BY purged_at DESC").all();
     const avoid = getAvoid(); // { companies:[…hard block], patterns:[…soft, mode] }
-    // Agent: skip passed-like roles; never re-add purgedUrls; NEVER emit
-    // avoid.companies (hard); flag/skip avoid.patterns per each pattern's mode.
-    writeFileSync(AGENT_FEEDBACK_PATH, JSON.stringify({ passed, purgedUrls, avoid }, null, 2));
+    // Open research requests Andrew flagged — the agent fulfills these each run.
+    const researchRequests = db.query(
+      `SELECT url, company, title, research_note, user_overrides
+       FROM jobs WHERE research_status = 'requested' ORDER BY updated_at DESC`
+    ).all().map(mergeOverrides);
+    writeFileSync(AGENT_FEEDBACK_PATH,
+      JSON.stringify({ passed, purgedUrls, avoid, researchRequests }, null, 2));
   } catch (e) {
     console.warn("writeAgentFeedback failed:", e.message);
   }
@@ -304,6 +313,9 @@ export function upsertJob(payload) {
          health_notes = COALESCE(?, health_notes),
          fit_summary = COALESCE(?, fit_summary),
          posted_at = COALESCE(?, posted_at),
+         agent_research = COALESCE(?, agent_research),
+         research_status = COALESCE(?, research_status),
+         research_done_at = COALESCE(?, research_done_at),
          last_seen_at = datetime('now'),
          updated_at = datetime('now'),
          raw_json = COALESCE(?, raw_json)
@@ -315,6 +327,7 @@ export function upsertJob(payload) {
       payload.score ?? existing.score, JSON.stringify(payload.score_reasons ?? []),
       payload.health_flag ?? null, payload.health_score ?? null, payload.health_notes ?? null,
       payload.fit_summary ?? null, payload.posted_at ?? null,
+      payload.agent_research ?? null, payload.research_status ?? null, payload.research_done_at ?? null,
       payload.raw_json ? JSON.stringify(payload.raw_json) : null, key
     );
     return { job: getJob(existing.id), created: false };
@@ -338,8 +351,29 @@ export function upsertJob(payload) {
   return { job: getJob(info.lastInsertRowid), created: true };
 }
 
+// Overlay Andrew's hand-edits (user_overrides JSON) on top of the base row, so his
+// massaged values win on read while the agent can still refresh untouched fields.
+function mergeOverrides(row) {
+  if (!row || !row.user_overrides) return row;
+  try {
+    const ov = JSON.parse(row.user_overrides);
+    return ov && typeof ov === "object" ? { ...row, ...ov } : row;
+  } catch { return row; }
+}
+
 export function getJob(id) {
+  return mergeOverrides(db.query("SELECT * FROM jobs WHERE id = ?").get(id));
+}
+
+// Raw row WITHOUT overrides merged — for write paths that need the stored values.
+export function getJobRaw(id) {
   return db.query("SELECT * FROM jobs WHERE id = ?").get(id);
+}
+
+// Does a row with this dedupe_key (canonical url, else hash) already exist?
+export function jobExistsByKey(key) {
+  if (!key) return false;
+  return !!db.query("SELECT 1 FROM jobs WHERE dedupe_key = ?").get(key);
 }
 
 // Purge a closed/dead posting: delete the row AND remember its url so the agent
@@ -389,25 +423,45 @@ export function listJobs({ includeHidden = true, status = null } = {}) {
       (hidden = 1 OR status IN ('passed','rejected')) ASC,
       score DESC,
       last_seen_at DESC`;
-  return db.query(sql).all(...args);
+  return db.query(sql).all(...args).map(mergeOverrides);
 }
 
+// User-owned columns set directly. (research_status is set here too — by the user
+// requesting research; the agent sets it to "done" via ingest.)
+const USER_COLUMNS = ["status", "hidden", "pinned", "notes",
+  "pass_reason", "pass_category", "pass_scope", "research_status", "research_note"];
+// Listing fields Andrew can hand-edit; these are stored in user_overrides (NOT the
+// base columns) so the agent's refreshes never clobber his edits.
+const OVERRIDE_FIELDS = ["title", "company", "location", "work_mode", "salary",
+  "description", "fit_summary", "url", "employer_type", "posted_at"];
+
 export function updateUserFields(id, fields) {
-  const allowed = ["status", "hidden", "pinned", "notes", "pass_reason", "pass_category", "pass_scope"];
   const sets = [];
   const args = [];
-  for (const k of allowed) {
+  for (const k of USER_COLUMNS) {
     if (k in fields) { sets.push(`${k} = ?`); args.push(fields[k]); }
   }
-  if (fields.status === "applied" && !getJob(id)?.applied_at) {
+
+  // Hand-edited listing fields → merge into the user_overrides JSON map.
+  const overridePatch = {};
+  for (const k of OVERRIDE_FIELDS) if (k in fields) overridePatch[k] = fields[k];
+  if (Object.keys(overridePatch).length) {
+    const cur = getJobRaw(id);
+    let ov = {};
+    try { ov = cur?.user_overrides ? JSON.parse(cur.user_overrides) : {}; } catch { ov = {}; }
+    const merged = { ...ov, ...overridePatch };
+    sets.push("user_overrides = ?"); args.push(JSON.stringify(merged));
+  }
+
+  if (fields.status === "applied" && !getJobRaw(id)?.applied_at) {
     sets.push("applied_at = datetime('now')");
   }
   if (!sets.length) return getJob(id);
   sets.push("updated_at = datetime('now')");
   db.query(`UPDATE jobs SET ${sets.join(", ")} WHERE id = ?`).run(...args, id);
   if ("status" in fields) addStatusHistory(id, fields.status, fields.statusNote);
-  // Keep the agent's feedback export current when pass/reject signals change.
-  if ("status" in fields || "pass_reason" in fields) writeAgentFeedback();
+  // Keep the agent's feedback export current when pass/reject/research signals change.
+  if ("status" in fields || "pass_reason" in fields || "research_status" in fields) writeAgentFeedback();
   return getJob(id);
 }
 
