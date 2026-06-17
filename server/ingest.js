@@ -5,7 +5,7 @@
 // Lives in its own module (not index.js) so the importer and tests can use it
 // without starting the HTTP server.
 
-import { upsertJob, recordSource, purgeByUrl, getAvoid, jobExistsByKey } from "./db.js";
+import { upsertJob, recordSource, purgeByUrl, getAvoid, jobExistsByKey, isLikedByKey, getConfig } from "./db.js";
 import { scoreJob } from "./scoring.js";
 import { classifyEmployer } from "./slurp.js";
 import { llmEnabled, assessEmployerHealth } from "./llm.js";
@@ -54,7 +54,15 @@ export async function ingest(payload) {
     if (h) payload = { ...payload, health_flag: h.flag, health_score: h.score, health_notes: h.notes };
   }
 
-  const { score, reasons } = scoreJob(payload);
+  // `liked` is user-owned and never travels in the agent's payload. Pull the
+  // existing row's flag in so the +30 boost survives the agent's re-score on
+  // refresh. (upsertJob's UPDATE branch never writes `liked`, so this only feeds
+  // scoring; the stored flag stays whatever Andrew set.)
+  const liked = isLikedByKey(payload.dedupe_key || payload.url);
+  // Comp floor is config, not a per-job field — feed it into scoring so the
+  // sub-floor penalty applies (the agent reads the same value from agent-config).
+  const minSalary = getConfig().searchProfile?.minSalary ?? 0;
+  const { score, reasons } = scoreJob({ ...payload, liked, minSalary });
   return upsertJob({ ...payload, score, score_reasons: reasons });
 }
 

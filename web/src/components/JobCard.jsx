@@ -35,7 +35,7 @@ export default function JobCard({ job, onUpdate, onReload }) {
   const [rNote, setRNote] = useState(job.research_note || "");
   const reasonRef = useRef(null);
 
-  const EDITABLE = ["title", "company", "location", "work_mode", "salary", "description", "fit_summary", "url", "employer_type", "posted_at"];
+  const EDITABLE = ["title", "company", "location", "work_mode", "salary", "description", "fit_summary", "url", "direct_url", "employer_type", "posted_at"];
   const startEdit = () => { setDraft(Object.fromEntries(EDITABLE.map((k) => [k, job[k] ?? ""]))); setEditing(true); setOpen(true); };
   const saveEdit = () => {
     // Only send fields that actually changed → recorded into user_overrides server-side.
@@ -95,7 +95,8 @@ export default function JobCard({ job, onUpdate, onReload }) {
         <HealthSquare score={job.health_score} notes={job.health_notes} />
         <div className="who">
           <div className="title">{job.title || "(untitled)"} {job.employer_type === "uc" && <span className="badge uc">UC</span>} {job.employer_type === "government" && <span className="badge gov">GOV</span>}</div>
-          <div className="sub">{job.company || "—"} · {job.location || "?"} · <span className={`mode ${job.work_mode}`}>{job.work_mode}</span> · <span className="src">{job.source}</span>{ageLabel(job) && <> · <span className="age">{ageLabel(job)}</span></>}</div>
+          <div className="company">{job.company || "—"}</div>
+          <div className="sub">{job.location || "?"} · <span className={`mode ${job.work_mode}`}>{job.work_mode}</span> · <span className="src">{job.source}</span>{ageLabel(job) && <> · <span className="age">{ageLabel(job)}</span></>}</div>
           {job.fit_summary && <div className="fit">{job.fit_summary}</div>}
           {buried && job.pass_reason && <div className="pass-reason-tag">not interested: {job.pass_reason}</div>}
         </div>
@@ -108,6 +109,10 @@ export default function JobCard({ job, onUpdate, onReload }) {
 
       <div className="card-actions">
         {job.url && <a href={job.url} target="_blank" rel="noreferrer">open posting ↗</a>}
+        {job.direct_url && job.direct_url !== job.url && <a className="direct" href={job.direct_url} target="_blank" rel="noreferrer">company posting ↗</a>}
+        <button className={`like ${job.liked ? "liked" : ""}`}
+          title={job.liked ? "you like this employer — boosts its score; click to remove" : "I like this employer — boost its score"}
+          onClick={() => onUpdate(job.id, { liked: job.liked ? 0 : 1 })}>{job.liked ? "★ liked" : "☆ like"}</button>
         <button onClick={() => onUpdate(job.id, { pinned: job.pinned ? 0 : 1 })}>{job.pinned ? "unpin" : "pin"}</button>
         <button onClick={() => onUpdate(job.id, { hidden: job.hidden ? 0 : 1 })}>{job.hidden ? "unhide" : "hide / sink"}</button>
         <button className="passed" onClick={passWithReason}>not interested</button>

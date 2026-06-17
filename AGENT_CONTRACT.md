@@ -13,14 +13,20 @@ Each side reads the other's. Append newest-first.
 
 0. **Read `data/agent-config.json`** (exported by the host on boot + every Settings
    change) and let it OVERRIDE the defaults below — this is how the Settings page drives
-   the hunt. Keys: `searchProfile {keywords, excludeKeywords, locations, bayAreaCities}`,
-   `priorityEmployers {uc, government}`, `excludeStrugglingCompanies`,
+   the hunt. Keys: `searchProfile {keywords, excludeKeywords, locations, bayAreaCities,
+   minSalary}`, `priorityEmployers {uc, government}`, `excludeStrugglingCompanies`,
    `sources [{name,url,active}]` (only search `active` ones), `alerts {hotScore}`. If the
    file is absent, fall back to the profile below.
+   - **`searchProfile.minSalary`** (USD/year, e.g. 175000; 0 = no floor) — Andrew's comp
+     floor. Down-rank/skip roles whose top-of-range is clearly below it; Orion also applies
+     a −30 scoring penalty + a card flag to sub-floor roles, so you don't have to hand-filter
+     comp every run.
 0b. **Read `data/agent-feedback.json`** and respect it:
     `{ "passed":[{url,company,title,…,pass_reason,pass_category,pass_scope}],
        "purgedUrls":[{url,reason}],
-       "avoid":{ "companies":[{company,reason,scope}], "patterns":[{pattern,reason,mode}] } }`.
+       "avoid":{ "companies":[{company,reason,scope}], "patterns":[{pattern,reason,mode}] },
+       "researchRequests":[{dedupe_key,url,company,title,research_note,user_overrides,…}],
+       "liked":[{url,company,title,location,work_mode,source,employer_type,fit_summary}] }`.
     - `passed[]` — standing negative preferences; use `pass_category`/`pass_scope`
       (structured) over guessing from free text.
     - `purgedUrls` — **never re-emit** (verified dead).
@@ -28,8 +34,13 @@ Each side reads the other's. Append newest-first.
       blocks them server-side too, but you must not send them.
     - `avoid.patterns` — soft: `mode:"suggest"` → surface but flag "matches avoid rule";
       `mode:"block"` → skip.
-    - `researchRequests` — rows Andrew flagged for you to research. Each has his
-      `research_note` (the question) + the merged current fields + `user_overrides`.
+    - `liked[]` — Andrew's **positive** signal (the mirror of `avoid`): employers/roles he
+      ⭐ likes. **Up-prioritize similar roles/companies.** Orion already adds the +score
+      boost itself; this is so YOU surface more like them. Do NOT set `score` (Orion owns it).
+    - `researchRequests` — rows Andrew flagged for you to research. Each carries the row's
+      immutable **`dedupe_key`** (key your enrichment on THIS, not the merged `url`, so a
+      hand-edited url can't create a duplicate) + his `research_note` (the question) + the
+      merged current fields + `user_overrides`.
       Fulfill each: append an enrichment record (below) and it drops from this list.
     - **`user_overrides`** (on passed/research rows) — fields Andrew hand-edited. These
       are authoritative: NEVER change a field present in a row's `user_overrides`; enrich
@@ -87,7 +98,8 @@ arrives.
 
 ```json
 {
-  "url": "https://…",                  // canonical posting URL — the dedupe key
+  "url": "https://…",                  // canonical posting URL — the dedupe key (often the aggregator: where you FOUND it)
+  "direct_url": "https://job-boards.greenhouse.io/…", // OPTIONAL: employer's own posting (Greenhouse/Lever/Ashby/company). Card shows both; `url` stays the dedupe key. Set this whenever `url` is an aggregator (LinkedIn/Indeed/Wellfound/reactjobs).
   "title": "Senior Front-End Engineer",
   "company": "Estuary",
   "location": "Remote (US)",

@@ -7,6 +7,7 @@
 import { Database } from "bun:sqlite";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { scoreJob } from "./scoring.js";
 
 const DB_PATH = process.env.DB_PATH || "./data/orion.db";
 mkdirSync(dirname(DB_PATH), { recursive: true });
@@ -125,6 +126,8 @@ ensureColumn("jobs", "research_status", "TEXT DEFAULT 'none'"); // none|requeste
 ensureColumn("jobs", "research_note", "TEXT");  // user-owned: Andrew's research instruction
 ensureColumn("jobs", "agent_research", "TEXT"); // agent-owned: findings (markdown)
 ensureColumn("jobs", "research_done_at", "TEXT");
+ensureColumn("jobs", "liked", "INTEGER DEFAULT 0"); // user-owned: "⭐ I like them" → +score boost; survives refresh
+ensureColumn("jobs", "direct_url", "TEXT"); // employer's own posting (Greenhouse/Lever/Ashby/company); `url` stays the "where I found it" key (often an aggregator)
 
 // --- Settings / search configuration ----------------------------------------
 // Everything the search + scoring uses is configurable here and editable from
@@ -135,6 +138,10 @@ export const DEFAULT_SETTINGS = {
     keywords: ["react", "frontend", "front-end", "javascript", "css", "less"],
     excludeKeywords: ["contract", "unpaid"],
     locations: { bayAreaHybridOnsite: true, usRemote: true },
+    // Comp floor (USD/year). Roles whose top-of-range falls clearly below this get a
+    // scoring penalty + a card flag. 0/null = no floor. The agent reads this from
+    // agent-config.json to stop hand-filtering on comp every run.
+    minSalary: 175000,
     bayAreaCities: [
       "San Francisco", "Oakland", "Berkeley", "Palo Alto", "Mountain View",
       "San Jose", "Santa Clara", "Sunnyvale", "San Mateo", "Santa Cruz",
@@ -178,16 +185,39 @@ export function setSetting(key, value) {
 }
 
 export function getConfig() {
-  // Merge stored config over defaults so newly-added top-level keys (e.g. `alerts`)
-  // appear for existing saved configs without a wipe/migration.
-  return { ...DEFAULT_SETTINGS, ...getSetting("config", {}) };
+  // Merge stored config over defaults so newly-added keys appear for existing saved
+  // configs without a wipe/migration. Top-level is shallow-merged; searchProfile is
+  // ALSO merged one level deep, so a newly-added nested default (e.g. minSalary) shows
+  // up even when a previously-saved searchProfile (which lacks it) would otherwise
+  // shadow the whole object. Stored values still win where present.
+  const stored = getSetting("config", {});
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    searchProfile: { ...DEFAULT_SETTINGS.searchProfile, ...(stored.searchProfile || {}) },
+  };
 }
 
 export function setConfig(partial) {
-  const merged = { ...getConfig(), ...partial };
+  const before = getConfig();
+  const merged = { ...before, ...partial };
   setSetting("config", merged);
   writeAgentConfig(merged); // keep the agent's file handoff in sync on every change
+  // The comp floor is a scoring input — if it changed, re-score the whole board now
+  // so existing rows reflect the new floor immediately (don't wait an hour for the
+  // agent's next refresh to re-touch each row). Cheap: pure CPU over the jobs table.
+  if ((before.searchProfile?.minSalary ?? 0) !== (merged.searchProfile?.minSalary ?? 0)) {
+    rescoreAllJobs();
+  }
   return merged;
+}
+
+// Re-score every job in place (no user fields touched). Used when a global scoring
+// input changes (e.g. the comp floor). See rescoreJob for the per-row contract.
+export function rescoreAllJobs() {
+  const ids = db.query("SELECT id FROM jobs").all();
+  for (const { id } of ids) rescoreJob(id);
+  return ids.length;
 }
 
 // --- Avoid rules (ethics/values blocklist) ----------------------------------
@@ -259,12 +289,24 @@ export function writeAgentFeedback() {
     const purgedUrls = db.query("SELECT url, reason, purged_at FROM purged_urls ORDER BY purged_at DESC").all();
     const avoid = getAvoid(); // { companies:[…hard block], patterns:[…soft, mode] }
     // Open research requests Andrew flagged — the agent fulfills these each run.
+    // Include dedupe_key so the agent can write enrichment keyed on the row's
+    // IMMUTABLE key (not the merged/overridden url) — keeps a hand-edited url from
+    // landing as a duplicate. (Belt-and-suspenders with the override-aware upsert.)
+    // Select dedupe_key BEFORE mergeOverrides so an override.url can't shadow it.
     const researchRequests = db.query(
-      `SELECT url, company, title, research_note, user_overrides
+      `SELECT dedupe_key, url, direct_url, company, title, research_note, user_overrides
        FROM jobs WHERE research_status = 'requested' ORDER BY updated_at DESC`
+    ).all().map((r) => ({ ...mergeOverrides(r), dedupe_key: r.dedupe_key }));
+    // Liked employers — Andrew's user-owned positive signal. Mirrors `avoid`, but
+    // for "I like them / show me more like this": the agent up-prioritizes similar
+    // roles/companies. (Orion already adds the score boost itself; this just lets
+    // discovery learn from it.)
+    const liked = db.query(
+      `SELECT url, company, title, location, work_mode, source, employer_type, fit_summary
+       FROM jobs WHERE liked = 1 ORDER BY updated_at DESC`
     ).all().map(mergeOverrides);
     writeFileSync(AGENT_FEEDBACK_PATH,
-      JSON.stringify({ passed, purgedUrls, avoid, researchRequests }, null, 2));
+      JSON.stringify({ passed, purgedUrls, avoid, researchRequests, liked }, null, 2));
   } catch (e) {
     console.warn("writeAgentFeedback failed:", e.message);
   }
@@ -291,13 +333,26 @@ export function nowISO() {
  * user-owned fields. Returns { job, created }.
  */
 export function upsertJob(payload) {
-  const key = payload.dedupe_key || payload.url || hashKey(payload);
-  const existing = db.query("SELECT * FROM jobs WHERE dedupe_key = ?").get(key);
+  let key = payload.dedupe_key || payload.url || hashKey(payload);
+  let existing = db.query("SELECT * FROM jobs WHERE dedupe_key = ?").get(key);
+
+  // Override-aware match. Andrew can hand-edit a row's url; that edit lives in
+  // user_overrides (overlaid on read) while the base dedupe_key/url columns keep
+  // their ORIGINAL values. So an enrichment/refresh keyed on the edited url won't
+  // match by dedupe_key — which previously inserted a DUPLICATE row. Fall back to
+  // the row whose user_overrides.url equals this payload's url and update THAT row
+  // in place (keyed by its real dedupe_key). This never touches user_overrides.
+  if (!existing) {
+    const wanted = payload.dedupe_key || payload.url;
+    const om = wanted ? findByOverrideUrl(wanted) : null;
+    if (om) { existing = om; key = om.dedupe_key; }
+  }
 
   if (existing) {
     db.query(
       `UPDATE jobs SET
          url = COALESCE(?, url),
+         direct_url = COALESCE(?, direct_url),
          title = COALESCE(?, title),
          company = COALESCE(?, company),
          location = COALESCE(?, location),
@@ -321,7 +376,7 @@ export function upsertJob(payload) {
          raw_json = COALESCE(?, raw_json)
        WHERE dedupe_key = ?`
     ).run(
-      payload.url ?? null, payload.title ?? null, payload.company ?? null,
+      payload.url ?? null, payload.direct_url ?? null, payload.title ?? null, payload.company ?? null,
       payload.location ?? null, payload.work_mode ?? null, payload.salary ?? null,
       payload.description ?? null, payload.source ?? null, payload.employer_type ?? null,
       payload.score ?? existing.score, JSON.stringify(payload.score_reasons ?? []),
@@ -333,19 +388,26 @@ export function upsertJob(payload) {
     return { job: getJob(existing.id), created: false };
   }
 
+  // Initial status — honored ONLY on INSERT (a brand-new row), e.g. when Andrew tells
+  // the agent "I already applied to this" and it isn't in the DB yet. status stays
+  // user-owned: the UPDATE/refresh branch above NEVER touches it, so agent re-runs can't
+  // clobber a status Andrew (or this initial add) set. Defaults to 'new'. If 'applied'
+  // (and Andrew didn't pass an explicit applied_at) we stamp applied_at = now.
+  const initStatus = payload.status || "new";
+  const initAppliedAt = payload.applied_at ?? (initStatus === "applied" ? new Date().toISOString() : null);
   const info = db.query(
     `INSERT INTO jobs
-       (dedupe_key, url, title, company, location, work_mode, salary, description,
+       (dedupe_key, url, direct_url, title, company, location, work_mode, salary, description,
         source, employer_type, score, score_reasons, health_flag, health_score, health_notes,
-        fit_summary, posted_at, raw_json)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        fit_summary, posted_at, status, applied_at, raw_json)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).run(
-    key, payload.url ?? null, payload.title ?? null, payload.company ?? null,
+    key, payload.url ?? null, payload.direct_url ?? null, payload.title ?? null, payload.company ?? null,
     payload.location ?? null, payload.work_mode ?? null, payload.salary ?? null,
     payload.description ?? null, payload.source ?? "manual", payload.employer_type ?? "company",
     payload.score ?? 0, JSON.stringify(payload.score_reasons ?? []),
     payload.health_flag ?? "ok", payload.health_score ?? null, payload.health_notes ?? null,
-    payload.fit_summary ?? null, payload.posted_at ?? null,
+    payload.fit_summary ?? null, payload.posted_at ?? null, initStatus, initAppliedAt,
     payload.raw_json ? JSON.stringify(payload.raw_json) : null
   );
   return { job: getJob(info.lastInsertRowid), created: true };
@@ -370,10 +432,35 @@ export function getJobRaw(id) {
   return db.query("SELECT * FROM jobs WHERE id = ?").get(id);
 }
 
-// Does a row with this dedupe_key (canonical url, else hash) already exist?
+// Find a row whose Andrew-edited url (user_overrides.url) equals the given url.
+// Used so enrichments/refreshes that key on a hand-edited url resolve to the real
+// row instead of creating a duplicate. Returns the raw row (no overrides merged).
+function findByOverrideUrl(url) {
+  if (!url) return null;
+  return db.query(
+    "SELECT * FROM jobs WHERE user_overrides IS NOT NULL AND json_extract(user_overrides, '$.url') = ?"
+  ).get(url) || null;
+}
+
+// Does a row with this dedupe_key (canonical url, else hash) already exist? Also
+// matches rows whose hand-edited user_overrides.url equals the key, so titleless
+// enrichment write-backs to a row whose url Andrew edited aren't rejected as
+// "unknown row" (which would otherwise drop the enrichment).
 export function jobExistsByKey(key) {
   if (!key) return false;
-  return !!db.query("SELECT 1 FROM jobs WHERE dedupe_key = ?").get(key);
+  if (db.query("SELECT 1 FROM jobs WHERE dedupe_key = ?").get(key)) return true;
+  return !!findByOverrideUrl(key);
+}
+
+// Is the existing row for this key "liked"? Used by ingest to carry Andrew's
+// user-owned `liked` flag through an agent refresh (the agent payload never
+// includes it), so the +30 boost isn't lost when the agent re-scores the row.
+// Matches by dedupe_key, then by hand-edited user_overrides.url (override-aware).
+export function isLikedByKey(key) {
+  if (!key) return false;
+  const row = db.query("SELECT liked FROM jobs WHERE dedupe_key = ?").get(key)
+    || findByOverrideUrl(key);
+  return !!(row && row.liked);
 }
 
 // Purge a closed/dead posting: delete the row AND remember its url so the agent
@@ -428,12 +515,27 @@ export function listJobs({ includeHidden = true, status = null } = {}) {
 
 // User-owned columns set directly. (research_status is set here too — by the user
 // requesting research; the agent sets it to "done" via ingest.)
-const USER_COLUMNS = ["status", "hidden", "pinned", "notes",
+const USER_COLUMNS = ["status", "hidden", "pinned", "notes", "liked",
   "pass_reason", "pass_category", "pass_scope", "research_status", "research_note"];
 // Listing fields Andrew can hand-edit; these are stored in user_overrides (NOT the
 // base columns) so the agent's refreshes never clobber his edits.
 const OVERRIDE_FIELDS = ["title", "company", "location", "work_mode", "salary",
-  "description", "fit_summary", "url", "employer_type", "posted_at"];
+  "description", "fit_summary", "url", "direct_url", "employer_type", "posted_at"];
+
+// Re-run Orion's scoring on a row and persist the new score/reasons WITHOUT
+// touching any user-owned field. Used when a scoring input that only lives in the
+// DB changes (e.g. the ⭐ like flag) and we want the new rank to apply immediately
+// instead of waiting for the next agent refresh. Scores the merged row so
+// user_overrides (location/work_mode/etc.) and `liked` are both reflected.
+export function rescoreJob(id) {
+  const job = getJob(id); // merged: overrides + the real `liked` column
+  if (!job) return null;
+  const minSalary = getConfig().searchProfile?.minSalary ?? 0;
+  const { score, reasons } = scoreJob({ ...job, minSalary });
+  db.query("UPDATE jobs SET score = ?, score_reasons = ?, updated_at = datetime('now') WHERE id = ?")
+    .run(score, JSON.stringify(reasons), id);
+  return getJob(id);
+}
 
 export function updateUserFields(id, fields) {
   const sets = [];
@@ -460,8 +562,11 @@ export function updateUserFields(id, fields) {
   sets.push("updated_at = datetime('now')");
   db.query(`UPDATE jobs SET ${sets.join(", ")} WHERE id = ?`).run(...args, id);
   if ("status" in fields) addStatusHistory(id, fields.status, fields.statusNote);
-  // Keep the agent's feedback export current when pass/reject/research signals change.
-  if ("status" in fields || "pass_reason" in fields || "research_status" in fields) writeAgentFeedback();
+  // Toggling the ⭐ like is a scoring input — re-score the row now so the +30 boost
+  // (or its removal) takes effect immediately, not just on the next agent refresh.
+  if ("liked" in fields) rescoreJob(id);
+  // Keep the agent's feedback export current when pass/reject/research/like signals change.
+  if ("status" in fields || "pass_reason" in fields || "research_status" in fields || "liked" in fields) writeAgentFeedback();
   return getJob(id);
 }
 

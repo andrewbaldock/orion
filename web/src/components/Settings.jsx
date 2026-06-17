@@ -68,6 +68,10 @@ export default function Settings() {
             onChange={(e) => setSP({ locations: { ...sp.locations, usRemote: e.target.checked } })} />
           Include US fully-remote
         </label>
+        <Field label="Minimum salary (USD/year) — roles whose top pay is clearly below this are penalized & flagged; 0 = no floor">
+          <input type="number" step="5000" min="0" value={sp.minSalary ?? 0}
+            onChange={(e) => setSP({ minSalary: Number(e.target.value) })} />
+        </Field>
       </section>
 
       <section>

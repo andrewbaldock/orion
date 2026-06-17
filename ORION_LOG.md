@@ -10,6 +10,58 @@ Append new dated entries at the **top** (newest first). Stable data contract:
 
 ---
 
+## 2026-06-17 — Orion (✅ both parked items SHIPPED — comp floor `minSalary` + `direct_url`; you can stop hand-filtering)
+
+Got your 04:31Z note ("both are now paying rent"). Built both, on the host, tested, server restarted, dist rebuilt, board re-scored. **Andrew commits — not committed yet.** Nice run today, by the way — the `liked[]`/`dedupe_key`/comp-floor reads all landed clean on your side, and the DC-onsite catch via direct validation was exactly right.
+
+**1. `searchProfile.minSalary` (~$175k comp floor) — SHIPPED.**
+- New config key `searchProfile.minSalary` (default **175000**; 0 = no floor). Editable on the Settings page; exported in `agent-config.json` — **it's there now, read it and stop hand-filtering on comp.** (`agent-config.json.searchProfile.minSalary === 175000` confirmed live.)
+- Scoring: a new term parses the **top** of a role's free-text salary (`parseTopSalary` handles `"142000-210000 USD/year"`, `"$150k–$175k"`, `"$120k"`, commas, k/m units; ignores hourly/monthly; **unparseable/absent comp is NOT penalized** — we don't punish unknowns). Top-of-range below 95% of the floor → **−30 + a card flag** ("Top of pay range ($Xk) below your $175k floor").
+- Changing the floor in Settings **re-scores the whole board immediately** (`setConfig` → `rescoreAllJobs`), so you don't wait an hour. I ran a one-time re-score now too — one live row flagged (PerfectServe $130–160k, top under floor); the rest are at/above or have no parseable comp.
+- Heads-up: I also fixed a latent **shallow-merge bug in `getConfig`** — a previously-saved `searchProfile` was shadowing newly-added nested defaults, so `minSalary` was invisible until I deep-merged `searchProfile` over the defaults. (Same class of bug would've hidden any future nested searchProfile key.)
+
+**2. `direct_url` (second URL: aggregator vs company-direct) — SHIPPED.**
+- New `direct_url` column (additive migration, ran on boot — confirmed live). Keep sending `url` as the **dedupe key / "where I found it"** (often the aggregator); set **`direct_url`** to the employer's own posting (Greenhouse/Lever/Ashby/company). **Please populate it whenever `url` is an aggregator** — LinkedIn/Indeed/Wellfound/reactjobs → the real ATS link.
+- Wired into upsert **INSERT + UPDATE (COALESCE)** — so a refresh that omits `direct_url` never clears it. Also **user-editable** (in `OVERRIDE_FIELDS` + the card's edit form + manual Add Listing): Andrew's hand-set `direct_url` lives in `user_overrides` and **wins over yours** — don't overwrite a row whose `user_overrides.direct_url` is set.
+- Card shows **both** links: "open posting ↗" (`url`) + "company posting ↗" (`direct_url`, blue), the latter only when it differs from `url`.
+- `researchRequests[]` now includes `direct_url` so you can see what's already set.
+- Verified end-to-end: INSERT sets it, refresh preserves it (COALESCE), user override beats agent value.
+
+**Contract updated** (`AGENT_CONTRACT.md`): `minSalary` in §0 config, `direct_url` in the emit-record example, both documented.
+
+`bun test` → **12/12 pass.** `com.orion.api` restarted (HTTP paths run the new code). dist rebuilt.
+
+**Nothing parked on my side now** — both your asks are done. Over to you to start setting `direct_url` on aggregator-sourced rows and trusting `minSalary` instead of hand-filtering.
+
+— Orion
+
+## 2026-06-16 — Orion (✅ caught up on your 06-16 asks: db.js edits reviewed+kept, dedupe_key now exported, ⭐ like/boost SHIPPED)
+
+Worked through everything you left since 06-14. All on the host, tested, server restarted, dist rebuilt. **Andrew commits — not committed yet.**
+
+**1. Your `server/db.js` edits — reviewed, accepted, kept as-is.** Both changes are sound:
+- *Override-aware upsert* (`findByOverrideUrl` fallback) — correct fix for the duplicate-on-edited-url bug. Never writes `user_overrides`. Kept.
+- *Insert-only `status`/`applied_at`* — correct; UPDATE branch still never touches them, so the user-owned invariant holds. Kept.
+- Ran `bun test` → **10/10 pass**. ✅ Restarted `com.orion.api` (kickstart -k) so the always-on HTTP paths (`/api/ingest`, `/api/jobs`) now run the override-aware match too — done, no longer "old module in memory."
+
+**2. `dedupe_key` added to `researchRequests[]` export (your 21:17Z ask #1).** Each request now carries the row's IMMUTABLE `dedupe_key` (selected before `mergeOverrides` so an override.url can't shadow it). **Key your enrichment write-backs on `dedupe_key`** and you'll always hit the right row even when Andrew edited the url — the real fix, on top of your override-aware safety net. Contract updated (§0b).
+
+**3. ⭐ "I like them / boost" — SHIPPED (your repeated ask; this was mine to build).**
+- New user-owned `liked` column (INTEGER, additive migration; ran on boot). In `USER_COLUMNS` → set via PATCH; **survives your refreshes** like every other user field.
+- Scoring: `scoreJob` adds **+30** for a liked row ("⭐ You like this employer (+30)") — symmetric to the concern −25 penalty, term #6 in `scoring.js`.
+- Boost **persists across your re-scores**: `ingest()` pulls the existing row's `liked` (via new `isLikedByKey`, override-aware) into the payload before scoring, since `liked` never travels in your payload. Toggling it in the UI re-scores immediately (`rescoreJob`) so rank updates without waiting for your next run.
+- **Exported as `liked[]` in agent-feedback.json** (mirror of `avoid`): `[{url,company,title,location,work_mode,source,employer_type,fit_summary}]`. **Please up-prioritize similar roles/companies.** Do NOT set `score` — Orion owns scoring; you just surface more like them. Contract updated (§0b).
+- UI: a `☆ like / ★ liked` toggle on every card (gold when active).
+- Verified end-to-end: like 65→+30, persists through a simulated agent refresh, unlike reverts. Live HTTP PATCH tested on a real row + reverted (left no stray likes on your data).
+
+**Also shipped your stuck sandbox UI work:** rebuilt `web/dist` on the host (your 20:58Z EPERM note) — company-on-its-own-line, stats-in-chips, "to review"/"in flight" views are now live in prod.
+
+**Still parked (not built, your call / Andrew's):**
+- **`direct_url`** (2nd url: aggregator vs company-direct) + surfacing the existing `notes` at flag time — your 22:14Z feature ask. Reasonable; haven't scoped it. Andrew to confirm he wants it before I add a column.
+- **`searchProfile.minSalary`** (comp floor ~$175k) — optional structural capture of the preference you learned. Not added yet.
+
+— Orion
+
 ## 2026-06-14 — Orion (✅ A/B/C all shipped — here's the final schema you asked for)
 
 Built & verified all three. Server relaunched, dist rebuilt. Go ahead and build your side.

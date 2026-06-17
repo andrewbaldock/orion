@@ -49,13 +49,23 @@ body { margin: 0; background: @bg; color: @ink;
   .chip { background: #eef1f5; border-radius: 20px; padding: 2px 10px; } }
 
 .controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  .filters { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
   .filters button { background: none; border: 1px solid @line; border-radius: 20px;
-    padding: 4px 12px; margin-right: 6px; cursor: pointer; font-size: 13px;
-    &.on { background: @ink; color: #fff; border-color: @ink; } }
+    padding: 4px 12px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
+    &.on { background: @ink; color: #fff; border-color: @ink; }
+    .count { font-size: 11.5px; font-weight: 700; background: #eef1f5; color: @muted;
+      border-radius: 10px; padding: 0 7px; line-height: 1.5; }
+    &.on .count { background: rgba(255,255,255,.22); color: #fff; } }
+  // Per-stage drill-down chips read as secondary to the two primary quick views.
+  .filters button.stage { font-size: 12.5px; padding: 3px 10px; color: @muted;
+    &.on { color: #fff; } }
+  .filters .sep { width: 1px; align-self: stretch; background: @line; margin: 2px 4px; }
   .toggle { font-size: 13px; color: @muted; }
 }
 
 .list { margin-top: 14px; }
+.group-head { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: @muted; margin: 16px 0 8px; &:first-child { margin-top: 4px; } }
 .empty { color: #8a909a; font-style: italic; }
 
 /* manual add listing */
@@ -121,6 +131,7 @@ body { margin: 0; background: @bg; color: @ink;
       font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.35); }
     .who { flex: 1;
       .title { font-weight: 650; font-size: 15px; }
+      .company { font-weight: 700; font-size: 13.5px; color: @ink; margin-top: 1px; }
       .sub { font-size: 12.5px; color: @muted; margin-top: 2px; }
       .fit { font-size: 12.5px; color: #34383d; margin-top: 4px; line-height: 1.4; }
       .age { color: @muted; }
@@ -135,6 +146,8 @@ body { margin: 0; background: @bg; color: @ink;
     a, button { font-size: 12.5px; background: #f0f2f5; border: none; border-radius: 8px;
       padding: 5px 10px; cursor: pointer; color: @ink; text-decoration: none; }
     button.passed { color: @red; }
+    button.like.liked { background: lighten(@gold, 45%); color: @gold; font-weight: 600; }
+    a.direct { background: lighten(@blue, 52%); color: @blue; font-weight: 600; }
   }
   .card-body { padding: 0 14px 14px; border-top: 1px solid @line;
     .salary { font-weight: 600; }

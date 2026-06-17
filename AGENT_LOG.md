@@ -10,6 +10,485 @@ Append new dated entries at the **top** (newest first). Stable data contract:
 
 ---
 
+## 2026-06-17 (13:34Z) — Agent (✅ fresh validated run — 3 open React/frontend roles appended; import clean)
+
+**Config used:** keywords react/frontend/javascript/css/less (TS not required); both locations on
+(bayAreaHybridOnsite + usRemote); priority UC + government; excludeStrugglingCompanies on. All sources active.
+
+**Feedback applied:** honored `avoid.companies` hard block (Tesla/SpaceX/X/xAI/Neuralink/Boring/Palantir/
+Flock/Juul — none surfaced). Did not re-emit `passed` (PerfectServe, Engine). Skipped every `purgedUrls`
+entry. No open `researchRequests`; empty `liked[]`. Applied the learned **comp-floor preference (~$175k)** —
+used it to drop sub-floor postings (below).
+
+**Candidates vs validated:** mined Greenhouse/Lever/Ashby searches + reactjobs.io + HN June-2026 board →
+~14 candidates → **fetched & validated 3 specific, open, US-eligible postings this run.** Each confirmed:
+loads, is the specific req (title/company match), open, with stack/comp read off the live page.
+
+**Appended (3), all validated open this run:**
+- **Close** — Senior Software Engineer, Frontend/React (USA-only, 100% remote) — ok/8 — the standout: a
+  PURE frontend role on a TS/React SPA (Vite, CSS modules, RTL/Playwright, GraphQL+REST), bootstrapped &
+  profitable since 2013, ~120-person all-remote. No salary on page → null. (Refreshed in place — import
+  shows updated:1, so this was already a known row; re-confirmed still open.)
+- **LaunchDarkly** — Full Stack Engineer, Experimentation — Remote (US) — ok/8 — React + TypeScript UI over
+  a Go/REST backend; $145.5k–$235.4k by geo zone + RSUs; market-leading dev-tools company. Fullstack, not
+  pure FE — flagged honestly. posted_at null.
+- **SERHANT.** — Senior Full Stack Engineer — Remote (USA) — ok/7 — React/Svelte (Next.js/SvelteKit) + Hono/
+  Node + Postgres, TS-primary; **$180k base** (meets the floor). Real-estate brokerage + media brand,
+  privately held. Framework-agnostic fullstack, not a focused React seat. posted_at null.
+
+**Dropped after validation (golden rule — truth over volume):**
+- **Remote.com** Senior Frontend Engineer (greenhouse 7701775003) — req is **Remote-EMEA**, not US, and
+  band $53.3k–$119.85k → dropped on location + comp.
+- **LaunchDarkly** Frontend Engineer, Guarded Releases (7664340003) — req URL **redirects to board
+  ?error=true → CLOSED.** Not emitted.
+- **Easyship** Senior Frontend (React) — global remote, **$50k–$70k** → far below floor, dropped.
+- **Rackspace** Front-End Engineer (lever) — page returned **empty/blocked on fetch**; could not validate
+  open/specific → dropped per golden rule (no unverified emits).
+- Qonto / Veeva / CRED Platform / Xsolla / Smart Working / Jobgether — non-US, EU, or India-based, or
+  apply-page-only → dropped (consistent with prior runs).
+
+**Self-check (last_run.json):** `imported:3, created:2, updated:1, sources:0, skipped:0, errors:[]`;
+`ran_at` 2026-06-17T13:34:15.684Z (newer than my 13:34:15Z append); incoming.jsonl drained to 0 lines. ✅ Clean.
+
+**Notes for Orion:** no new `__source` (all already in config). Re-flagging the two parked features that
+keep paying rent this run: **`direct_url`** (aggregator vs company-direct — Close/LaunchDarkly are direct
+greenhouse/ashby, fine, but LinkedIn/Indeed finds aren't) and **`searchProfile.minSalary` (~$175k)**
+(I'm still hand-filtering comp every run; Remote.com/Easyship dropped on it today). Both your/Andrew's call.
+
+— Agent
+
+## 2026-06-17 (04:31Z) — Agent (✅ fresh validated run — 3 real open React roles appended; import clean)
+
+**Config used:** keywords react/frontend/javascript/css/less (TS not required); both locations on
+(bayAreaHybridOnsite + usRemote); priority UC + government; excludeStrugglingCompanies on. All sources active.
+
+**Feedback applied:** honored `avoid.companies` hard block (Tesla/SpaceX/X/xAI/Neuralink/Boring/Palantir/
+Flock/Juul — none surfaced; also skipped Mesh = crypto/web3 by my own quality bar). Did not re-emit
+`passed` (PerfectServe, Engine). Skipped every `purgedUrls` entry. No open `researchRequests`, empty `liked[]`.
+Applied the learned **comp-floor preference (~$175k)** from my 22:14Z note — used it to drop two
+otherwise-open postings (below).
+
+**Candidates vs validated:** mined Greenhouse/Lever/Ashby searches + reactjobs.io + HN June-2026 board →
+~18 candidates → **fetched & validated 3 specific, open, US-eligible postings this run.** Each confirmed:
+loads, is the specific req (title/company match), open, with stack/comp read off the live page (Affirm via
+direct greenhouse fetch; Socure/Game Plan/Inception validated directly in-browser).
+
+**Appended (3), all validated open this run:**
+- **Affirm** — Software Engineer II, Frontend (Purchasing Integrations) — Remote (US) — ok/8 — JS checkout
+  SDK in React/Vue + JS/TS, $142k–$210k. NOTE: L-level (1.5+ yrs) so lower band may dip under the ~$175k
+  floor. posted_at null (page just says "New"). (Refreshed in place — was sent 22:00Z; import shows updated:1.)
+- **Alpaca** — Senior Frontend Engineer, Trading API — Remote (NA/Europe, US-eligible) — ok/8 — React/TS +
+  Tailwind, REST/WebSockets; Series D, $320M raised, $1.15B val. Heads-up: must-haves also include 3+ yrs
+  mobile + a systems lang (Go/C++/Rust). No salary on page → null. posted_at null.
+- **Glean** — Software Engineer, Fullstack — SF/Palo Alto **hybrid (3 days)** — ok/9 — React frontend +
+  Go/Java/TS APIs; $140k–$265k; 1,000+ employees, Forbes AI 50, very well-funded. Bay-Area-hybrid → fits.
+  posted_at null.
+
+**Dropped after validation (golden rule — truth over volume):**
+- **Socure** Front-End Web Developer — validated OPEN (Ashby), Hybrid SF/Seattle, but comp **$85k–$100k**
+  (Marketing dept brand-site role) → far below the ~$175k floor. Dropped on comp.
+- **Inception Point AI** Full Stack AI Eng (FE-leaning) — validated OPEN (Ashby), Remote-US, but **$120k–$130k**
+  AND a textbook early-stage red flag ("documentation may be sparse," "straight out of college" welcome,
+  greenfield/undocumented systems). Comp + stability → dropped.
+- **Game Plan Tech** Front End SW Engineer — reactjobs listed "US Remote" but the **live greenhouse req says
+  Washington, D.C.** (onsite, outside Bay Area) → dropped per location rule. (Good catch from direct validation.)
+- **MSQ DX** Front-End Development **Manager** — open, Remote-US, but a people-manager role at an agency,
+  $150k–$170k (below floor) → poor IC fit, dropped.
+- **Hopper** Sr Front-end (HTS) — page shows **"this job might be expired / not accepting applications"** → dropped.
+- **Udacity / Metronome / Splash Financial / Mesh / CompanyCam** — req URLs all **redirect to board ?error=true
+  or "page not found" → CLOSED.** Not emitted.
+- Easyship/Remote.com/Canonical/Veeva/Qonto and the reactjobs Web3/RN/EU/contract noise — non-US, wrong
+  role, or low pay (consistent with prior runs).
+
+**Self-check (last_run.json):** `imported:3, created:2, updated:1, sources:0, skipped:0, errors:[]`;
+`ran_at` 2026-06-17T04:31:36.500Z (newer than my 04:31:36Z append); incoming.jsonl drained to 0 lines. ✅ Clean.
+
+**Notes for Orion:** no new `__source` (all sources already in config). The two parked items from your 06-16
+log — **`direct_url`** (aggregator vs company-direct, e.g. reactjobs/LinkedIn → greenhouse/ashby) and
+**`searchProfile.minSalary` (~$175k)** — would both directly help this run: I'm hand-filtering on comp and
+juggling aggregator-vs-direct URLs manually each time. Still your/Andrew's call, but both are now paying rent.
+
+— Agent
+
+## 2026-06-16 (22:14Z) — Agent (✅ fulfilled Airtable + Upwave research; 📋 FEATURE for CC: a second "direct/company url" + a plain notes field; + comp-floor preference)
+
+**Research fulfilled (both updated in place, `created:0, updated:2, errors:[]`, researchRequests now empty):**
+- **Airtable — Software Engineer, Product Frontend (2-8 YOE)** — validated open. React/JS, full-stack-leaning; SF Embarcadero / NYC hybrid (~2-3 days), remote only if greater-Seattle; $148.1k-$221.5k + RSUs. Health ok/8 (~$11B val, 500k+ orgs / 80% of Fortune 100; note 2023-24 efficiency layoffs). The stored url is already the **direct** Greenhouse posting; the `...8397228002` id in Andrew's note looks like a sibling listing.
+- **Upwave — Senior Software Engineer (React)** — Andrew's note "150 to 175k is low for me" **confirmed**: posted range $150k-$175k + bonus/equity, **below his floor** → flagged as a comp pass in fit_summary. Health ok/7 (profitable, YC/Uncork/Bloomberg Beta). `upwave.com/job/...` is already the company-direct posting.
+
+**📋 FEATURE REQUEST for CC — two urls per posting + a plain notes field (Andrew asked; I did NOT build it):**
+Andrew: *"A lot of the URLs are to aggregator sites, I need a field to put direct url for job, and also just a straight up notes field"* and *"its ok for a posting to have 2 urls, like one for linkedin and one to company."* Proposed:
+1. **`direct_url` (a.k.a. company/apply url)** — a SECOND url column alongside the existing `url`. Keep `url` as the dedupe key / "where I found it" (often an aggregator: LinkedIn, Indeed, Wellfound, Built In), and add `direct_url` for the employer's own posting (Greenhouse/Lever/Ashby/company site). Card shows BOTH: "open posting ↗" (aggregator) + "company posting ↗" (direct). Both user-editable (add to the `EDITABLE`/`user_overrides` allow-list) AND agent-settable (add `direct_url` to upsert INSERT/UPDATE COALESCE columns). I'll populate `direct_url` on discovery/enrichment once the column exists (surfaced in `agent_research` meanwhile).
+2. **Plain notes field at flag time** — a `notes` column already exists (user-owned, rendered in the expanded card). Andrew may want it (a) surfaced in the "🔍 research" prompt next to `research_note`, and/or (b) editable without expanding the card. Suggest exposing the existing `notes` in the research/flag UI rather than adding a new column — confirm with Andrew which he meant. (`research_note` = his question to the agent; `notes` = his own running notes — keep distinct.)
+
+**Learned preference (applying going forward):** Andrew's **comp floor is > ~$175k** ("150-175k is low for me"). I'll down-rank/flag sub-~$175k roles and note it on the card. Worth capturing structurally (e.g., `searchProfile.minSalary` in agent-config + a scoring term) — optional, CC's call.
+
+— Agent
+
+## 2026-06-16 (22:00Z) — Agent (✅ fresh validated run — 6 real open React roles appended; import clean)
+
+**Config used:** keywords react/frontend/javascript/css/less (TS not required); both locations on
+(bayAreaHybridOnsite + usRemote); priority UC + government; excludeStrugglingCompanies on. All
+sources active.
+
+**Feedback applied:** honored `avoid.companies` hard block (Tesla/SpaceX/X/xAI/Neuralink/Boring/
+Palantir/Flock/Juul — none surfaced). Skipped every `purgedUrls` entry, incl. the closed Greenhouse
+reqs (Postscript, Reddit x2, Hungryroot, Gametime, CentralReach, Terzo, Arena Club dup, General
+Medicine dup) and the homepage/board-root/synthetic keys (Estuary, Seeq careers, UCSF board root,
+Berkeley board, join.build, hatchet.run, the hn:// keys). Not re-emitted `passed` (PerfectServe,
+Engine). No open `researchRequests` this run.
+
+**Candidates vs validated:** mined the HN "Who is hiring? (June 2026)" React board (~70 listings) +
+Greenhouse/Lever searches → ~20 strong candidates → **fetched & validated 6 specific, open postings
+this run.** Each confirmed: loads, is the specific req (title/company match), open, with stack read
+off the live page.
+
+**Dropped after validation (golden rule — truth over volume):**
+- **Remote.com** Sr Frontend — page tagged **Remote-EMEA**, not US-eligible.
+- **Veeva** Sr Frontend React — **UK/London (#RemoteUK)**, not US.
+- **LaunchDarkly** "Frontend Engineer, Guarded Releases" (orig target) — req **redirected to board
+  ?error=true → CLOSED**; substituted the team's still-open *Full Stack Engineer, Guarded Releases*
+  (Remote-US, validated open) instead.
+- **Cloudflare** Frontend UI Platform (req 7559379) — **redirected to cloudflare.com/careers →
+  closed/pulled.**
+- **Rackspace** Front-End US Remote (Lever) — body came back **empty on two fetches → couldn't confirm
+  open**, dropped rather than guess.
+- **Easyship** ($50–70k "Remote-Global"), **Perpay** (Philadelphia onsite), **Qonto** (EU) — pay/location fails.
+- HN-only roles I couldn't fetch to validate this run (Second Nature, Obsidian Security, Shepherd,
+  vvd, CO-Ver, etc.) — **held back** rather than emit unvalidated; candidates for next run if fetchable.
+
+**Appended (6), all validated open this run:**
+- **Metabase** — Software Engineer (Frontend) — Remote (US-eligible) — ok/8 — React+Redux, CSS/design
+  system, **no TS required**, $110–210k, $30M Series B — posted_at null (no date on Lever page).
+- **Airtable** — SWE, Product Frontend (2-8 YOE) — SF hybrid (Embarcadero 2-3d) / NY / Seattle-remote —
+  ok/9 — JS/React + Node/AWS/SQL, $148.1–221.5k — 2026-04-02.
+- **Wholesail** — Frontend Product Engineer — SF Bay Area hybrid — **concern/6** — React SPA (TanStack,
+  Plaid/Stripe), early-stage (2nd FE hire) — 2026-02-02.
+- **Vector** — Frontend Engineer — SF **onsite 5d** — **concern/6** — TS+React, 0→1 early-stage,
+  $160–200k — 2026-02-25.
+- **Gusto** — Staff SWE, Core Products — SF hybrid / Denver / NY — ok/9 — Rails + JS/React, $197–247k
+  SF, staff-level (8+ YOE) — posted_at null.
+- **LaunchDarkly** — Full Stack Engineer, Guarded Releases — Remote-US — ok/8 — TS/React + Go,
+  $116–187.66k by zone — posted_at null.
+
+**Self-check (last_run.json):** `imported:6, created:6, updated:0, sources:0, skipped:0, errors:[]`;
+`ran_at` 22:00:50Z (newer than my 22:00:49Z append); incoming.jsonl drained to 0 lines. ✅ Clean.
+
+**Notes/asks for Orion:** the **"⭐ I like them / boost"** user-owned positive-scoring signal Andrew
+asked for is still open on your side (see the 21:37Z + 21:17Z entries). Nothing else pending from me.
+
+— Agent
+
+## 2026-06-16 (21:55Z) — Agent (✅ added Flow Engineering as APPLIED; + insert-only status support in db.js; like/boost is yours to build, CC)
+
+**New entry — Andrew applied to it just now (tracked as `applied`):**
+- **Flow Engineering — Staff Software Engineer, Frontend – San Francisco** — SF **on-site** — Full-time —
+  $190k–$280k + equity — `source:linkedin` — health **ok/8**.
+- url: `https://www.linkedin.com/jobs/view/4382724966/` (cleaned LinkedIn job-view url as dedupe key).
+- Stack: React + TypeScript + Tailwind, Node.js/TS APIs; AI-native requirements platform for complex
+  hardware. Health: $23M Series A (Oct 2025, **Sequoia**-led; Collison brothers, David Helgason, EQT,
+  Backed VC) + $8.5M seed (~$31.5M total); customers Rivian, Joby Aviation, Astranis. posted_at
+  2026-06-09 ("reposted 1 week ago"). Validated live — Andrew submitted the application this session.
+- `last_run.json`: `imported:1, created:1, errors:[]`, drained.
+
+**⚠️ I edited `server/db.js` again — insert-only `status` support.** `upsertJob` now honors
+`payload.status` (and `applied_at`) **on INSERT only** — so when Andrew says "I already applied to X"
+and it's a brand-new row, the agent can file it directly as `applied` (and it stamps `applied_at=now`
+for `status:"applied"`). The UPDATE/refresh branch still NEVER touches `status`/`applied_at`, so the
+user-owned invariant holds — agent re-runs can't clobber a status. Defaults to `'new'` when omitted
+(unchanged behavior for normal discovery). `node --check` clean; verified via the applied add above
+(created:1, no errors). Same caveats as the 21:37Z entry: please `bun test` + eyeball; the one-shot
+importer runs the new code, an `com.orion.api` restart would propagate to the HTTP paths.
+
+**Like/boost feature — over to you, CC (per Andrew: "leave a note for CC to do it").** I did NOT build
+it. Recap of the ask + my suggested shape (full version in the 21:17Z entry): a **user-owned positive
+signal** — `liked` / `interest_boost` — mirroring `avoid`/`pass`, that adds a positive term in
+`scoreJob` (symmetric to the `concern −25` / `excluded −100` penalties), survives refreshes like other
+user fields, gets a card button ("⭐ I like them"), and is exported in `agent-feedback.json` so the
+agent can up-prioritize similar roles. Andrew asked for it twice and it's the clean way to "bump score
+for ones I like" without the agent touching `score` (which you own).
+
+— Agent
+
+## 2026-06-16 (21:37Z) — Agent (✅ FIXED the duplicate-on-edited-url bug at the source — override-aware upsert; dupes cleaned; ⚠️ I edited server/db.js)
+
+Per Andrew ("rebuild orion and yourself to handle this right"), I fixed the root cause in code
+rather than papering over it. **Heads-up: I edited `server/db.js` (your domain).**
+
+**The change (`server/db.js`):** `upsertJob` and `jobExistsByKey` are now **override-aware**. New
+helper `findByOverrideUrl(url)` = `SELECT * FROM jobs WHERE user_overrides IS NOT NULL AND
+json_extract(user_overrides,'$.url') = ?`. When a record doesn't match by `dedupe_key`, we fall back
+to the row whose hand-edited `user_overrides.url` equals the incoming url and update THAT row in place
+(keyed by its real `dedupe_key`). So an enrichment/refresh that keys on a url Andrew edited now lands
+on his real row instead of inserting a duplicate. It never writes to `user_overrides`; his edits +
+status + notes are untouched (still overlaid on read).
+
+**Cleanup done in one batch (verified):** appended 2 `__purge` lines for the duplicate rows I'd
+created (deleted by base `url` — Andrew's originals have different base urls, so they were untouched),
+then re-appended the Arena Club + General Medicine enrichments. With the fix live, the host importer
+resolved both to the ORIGINAL rows. `last_run.json`: **`imported:4, created:0, updated:2, errors:[]`**,
+incoming drained, and **`researchRequests` is now empty** (all 3 flipped to done). Net board: no
+duplicates, originals carry the research + corrected health, phone-screen status preserved.
+
+**Notes / asks for Orion:**
+- I could NOT run `bun test` in the sandbox (no Bun here) — I syntax-checked (`node --check`) and
+  relied on the per-record try/catch in `ingestBatch` + the live self-check above. **Please run
+  `bun test` and eyeball the diff when you get a chance.** Change is small and additive.
+- The fresh one-shot importer (`com.orion.import`) already runs the new code. The always-on
+  `com.orion.api` still holds the old module in memory — **a `com.orion.api` restart** would
+  propagate the override-aware match to the HTTP `/api/ingest` + `/api/jobs` paths too (not needed
+  for my file path, but good for consistency).
+- Adding `dedupe_key` to the `researchRequests` export is now **optional** (nice-to-have/defense in
+  depth) — the override-aware match removes the dependency.
+
+**Still open (your side):** the **"⭐ I like them / boost"** user-owned positive scoring signal Andrew
+asked for twice — see the 21:17Z entry below for the full spec. The agent can't set `score`; this is a
+scoring/UX change for you. Andrew's two liked employers both have strong fundamentals (research below),
+so the boost is well-justified.
+
+— Agent
+
+## 2026-06-16 (21:17Z) — Agent (⚠️ enrichment created 2 DUPLICATES — dedupe_key gap in researchRequests export; + "like/boost" feature ask)
+
+Fulfilled Andrew's 3 `researchRequests` (Arena Club, General Medicine, Terzo) — validated each
+posting open this run and researched company health. **But 2 of 3 enrichments created NEW rows
+instead of updating the existing ones.** `last_run.json`: `imported:3, created:2, updated:1`.
+researchRequests still lists General Medicine + Arena Club (Terzo correctly flipped to done).
+
+**Root cause — the export doesn't give me the row's `dedupe_key`.** `upsertJob` keys on the
+immutable `dedupe_key` column (the ORIGINAL ingested url), but `researchRequests[].url` is the
+**merged/overridden** url (from `user_overrides`). When Andrew hand-edits the url, his value lives in
+`user_overrides` and is only overlaid on read — `dedupe_key` and the base `url` column keep the
+original value. So:
+- **Terzo** — override was `{company}` only → its url column still = the greenhouse url I keyed on → **matched (updated)**. ✅
+- **General Medicine** & **Arena Club** — override included `url` → my key (the ashby / greenhouse url) ≠ their `dedupe_key` → **INSERTED new rows.** ❌
+
+The 2 duplicate rows I created (status `new`, full research attached):
+- `https://jobs.ashbyhq.com/general-medicine/a157a457-ca0a-4de9-ab9b-6c96e383de4c`
+- `https://job-boards.greenhouse.io/arenaclub/jobs/4224813009`
+Their base `url` column = those exact urls; the ORIGINAL rows' base `url` = their pre-edit values
+(General Medicine looks Wellfound-sourced; Arena Club LinkedIn-sourced), so a `__purge` by those urls
+hits only the duplicates, not Andrew's phone-screen originals.
+
+**Two asks for Orion (you're the sole DB writer — these need your side):**
+1. **Add `dedupe_key` (and ideally the base `url`) to each `researchRequests[]` row in the export.**
+   Then I can write enrichment keyed by `dedupe_key` and always hit the right row, even when Andrew
+   overrode the url. This is the real fix.
+2. **Please merge/clean the 2 duplicates** into Andrew's original rows (preserve his `user_overrides`
+   + `phone_screen` status + notes; carry over my agent_research / health / fit_summary / salary).
+   I'm holding off on `__purge` myself pending Andrew's OK, to avoid any risk to his interview rows.
+
+**Feature request (Andrew asked twice, explicitly):** a user-owned **positive** signal — *"⭐ I like
+them / boost this"* — the mirror of the avoid/pass system. He wrote *"we need a way to bump up score
+if I like them"* and *"I like this place so amend my score please."* The agent can't set `score`
+(you re-score; contract forbids it), and `health_score` is a stability channel, not a preference one.
+Suggest a user-owned `liked`/`interest_boost` field (survives refreshes like other user fields) that
+adds a positive term in scoring — symmetric to `concern`/`excluded` penalties. Exporting it in
+`agent-feedback.json` (like `avoid`) would also let me up-prioritize similar roles. Andrew's two
+"liked" employers both have strong fundamentals (see research), so a boost is well-justified.
+
+**Research delivered (on the dup rows for now):**
+- **Arena Club** — Principal Frontend Eng, React/TS, $190–240k, **downtown SF** (per Andrew + LinkedIn; greenhouse shows LA HQ). $10M Series A (~$20M total; Lightspeed/M13/defy.vc/BAM), Jeter + Brian Lee, eBay partnership → health ok/7 (was scored -18, likely a concern penalty; re-rated honestly).
+- **General Medicine** — Frontend Eng (SF), consumer "healthcare store", **downtown SF**. $32M seed (May 2025, Matrix Partners) from PillPack founders (sold to Amazon ~$1B) → health ok/8. (Left url/company/posted_at — his overrides — untouched.)
+- **Terzo** — (Sr/Staff) Frontend Eng, React/AI-native frontend. Series A ~$16M (Align Ventures), founded 2020, **LA-HQ** → health ok/7; **flagged: confirm remote vs LA-onsite** before prioritizing (onsite-outside-Bay should be penalized).
+
+— Agent
+
+## 2026-06-16 (20:58Z) — Agent (✅ 7 validated jobs appended; + UI work for Andrew this run)
+
+**Config used:** keywords react/frontend/javascript/css/less (TS not required); locations
+bayAreaHybridOnsite + usRemote both true; priority UC + government; excludeStrugglingCompanies on.
+All sources active.
+
+**Feedback applied:** honored `avoid.companies` hard block (Tesla/SpaceX/X/xAI/Neuralink/Boring/
+Palantir/Flock/Juul — none surfaced this run). Skipped all `purgedUrls` (the closed Greenhouse reqs
++ homepages/board roots/synthetic keys). `passed` had only Engine (Frontend, category "other") — not
+re-emitted. Treated the recurring "too TypeScript-heavy" pass preset as a soft negative → down-rated
+Tessera Labs (TS-heavy + early-stage) to `concern`.
+
+**Candidates found vs passed validation:** pulled ~20 Indeed results (remote + SF searches),
+fetched full details to validate 7 specific open postings (each confirmed open + real stack + real
+posted_at this run). Dropped: **Cambium** (backend-primary, frontend only "a plus" — not a frontend
+role); LA/non-Bay onsite roles (HANG); and several backend/fullstack-only hits.
+
+**Appended (7), all `source:indeed`, validated this run:**
+- True Link Financial — Sr Front End Eng — **Remote US** — ok/8 — Rails/React, JS, Material UI, Jest, **no TS required** (best fit) — posted 2026-06-05
+- Render — Staff Design Engineer — Remote/SF — ok/9 — React/TS/CSS, $218–300k, Series C — 2026-04-21
+- Vercel — SWE, Next.js — SF onsite — ok/9 — React core, $208–312k — 2026-05-12
+- Rippling — Sr Frontend Full Stack — SF hybrid(3d) — ok/8 — React + Python/Django, $168–280k — 2026-05-18
+- Prosper — Sr SWE React/React Native — SF hybrid(2d) — ok/7 — React/RN/TS, $173–205k — 2026-05-02
+- Tessera Labs — SWE Frontend — SF onsite — **concern/6** — TS-heavy, early-stage — 2026-05-05
+- mLabs — Frontend/Design Eng — SF onsite — **excluded/3** — early-stage Web3/crypto, token comp, agency-posted — 2026-05-20
+
+Used Indeed apply short-links (to.indeed.com/<id>) as the specific, stable dedupe URLs (resolved +
+validated via job-details this run). No new `__source` (Indeed already active). No `__purge` this run.
+
+**`researchRequests` — Terzo:** left unfulfilled. The Terzo req URL is in `purgedUrls` (dup of
+applied card 37, "enrich via card 37 url instead"), but the export didn't give me card 37's
+canonical url/dedupe_key — so I can't safely write back an enrichment without risking a junk row.
+**Ask:** include card 37's `url`/`dedupe_key` in the `researchRequests` row (or drop the request) and
+I'll enrich it next run.
+
+**Self-check:** last_run.json `ran_at` 2026-06-16T20:58:43Z (newer than my 20:58:14Z append),
+`imported:7, created:7, updated:0, skipped:0, errors:[]`, incoming.jsonl drained to 0 bytes. ✅
+
+**Heads-up (not data — Andrew was live this run):** at Andrew's request I edited the web app source
+directly: (1) **JobCard** now renders the **company on its own bold line** under the title (it was
+buried in the muted sub-line); (2) merged the stats indicators into the filter chips (each chip shows
+a count); (3) added two quick views — **"to review"** (status `new`, yellow, not-in-flight-yet) on top
+and **"in flight"** (active, sorted by pipeline stage) below, plus per-stage drill-down chips.
+Files: `web/src/components/JobCard.jsx`, `web/src/App.jsx`, `web/src/styles/app.less`. Verified it
+compiles (`vite build` → 38 modules transformed, clean) but I could **not** overwrite `web/dist` from
+the sandbox (EPERM) — **needs a host-side `bun run build` to ship to prod.** Flagging so you're aware
+the source changed. `stats`/`api.stats()` is now unused in App.jsx render — left in place; prune if you like.
+
+— Agent
+
+## 2026-06-16 (16:22Z) — Agent (🧹 full staleness sweep — purged 3 more closed; + ROOT-CAUSE FIX for Orion's verify)
+
+Andrew (rightly) called out stale closed listings lingering. Root cause: **greenhouse serves a cached "open" HTML view of `/jobs/{id}` even after a req closes** — so fetching the posting URL (what I and Orion's `verifyPosting` were doing) does NOT detect closure. Reddit Feeds (7751064) + DevX (7950505) both rendered fully "open" while actually closed.
+
+**Fix I adopted — use the live ATS APIs, not the HTML:**
+- Greenhouse: `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs` returns the authoritative list of CURRENTLY-OPEN job ids. If your id isn't in it → closed. (CORS-open, usable from the browser.)
+- Ashby: the posting page renders real content vs. "Job not found" when closed (or use `api.ashbyhq.com/posting-api/job-board/{org}`).
+
+**Swept all of Orion's listings against live status this run. Purged (verified closed via boards-api):**
+Reddit Feeds (7751064), Reddit DevX (7950505), Hungryroot (5843468004), **Postscript (8488222002)**, **Gametime United (5162273008)**, **CentralReach (4232881009)** — 6 closures cleared today.
+**Verified OPEN:** Maven (8362687002), Reddit Community Builders (7955200), Terzo (4267135009), PerfectServe (5844598004), Close (ashby), Chime, Afresh, Alpaca, Optimal Dynamics, Vetcove, WorkWhile, Mechanize.
+**Caveats:** HTTPie (ashby) is OPEN but **location = Prague** (likely EU-remote — possible location-fail vs. US-only-remote rule; flagging, not purging). Could NOT auto-verify via API (custom/Workday/aggregator boards — manual check needed): Autodesk (Workday), Upwave (custom careers), 2× Built In SF aggregator links.
+
+**🔧 Recommendation for Orion's maintainer:** swap `verifyPosting` from HTML-fetch to the **greenhouse boards-api id-membership check** (and ashby posting-api) for any greenhouse/ashby-hosted url. That makes auto-purge actually catch closures every run, so Andrew never has to hand-flag a dead listing again. The current dead-link/`error=true` heuristic misses the stale-cache case entirely. Happy to wire it into the discovery side too (I'll switch my own validate-before-emit to the boards-api going forward).
+
+## 2026-06-16 (16:17Z) — Agent (🧹 purged Reddit DevX req — closed per Andrew)
+
+Andrew flagged **Reddit — Senior Frontend Software Engineer, DevX** (`…/reddit/jobs/7950505`, added 13:12Z) as closed. Same pattern as Hungryroot: the direct greenhouse req page still served a stale "open" cache (New badge + live form + $190.8–267.1k), but trusting Andrew's direct signal. `__purge`d it; `last_run` imported 1 / errors []; verified on orion.hunt that 7950505 is gone while the two other Reddit reqs survive — **7955200 (Community Builders)** and **7751064 (Feeds Experience)**, both still live. URL blacklisted so it won't be re-added.
+
+## 2026-06-16 (16:10Z) — Agent (🧹 purged Hungryroot Sr Engineer, Web — confirmed closed)
+
+Andrew flagged that **Hungryroot — Senior Engineer, Web** (`…/hungryroot/jobs/5843468004`, added this morning at 15:05Z) is no longer open. Note: the direct greenhouse req page still served a stale cached "open" view (New badge + live apply form), but the Hungryroot board now shows "The job you are looking for is no longer open" and the role is gone from their listings (down to 3 jobs, none frontend) — so it's genuinely closed. `__purge`d it; `last_run` imported 1 / errors []; verified on orion.hunt that the Hungryroot card is gone (0 references). URL recorded in purgedUrls so it won't be re-added. Lesson: greenhouse direct-req pages can lag the board after a close — when liveness is in question, the board listing is the more reliable signal than the cached req page.
+
+## 2026-06-16 (16:08Z) — Agent (✅ enriched Andrew's applied Terzo row in place — + a dedupe gotcha to flag)
+
+Andrew asked me to fill in his existing **Terzo — (Sr/Staff) Frontend Engineer** card (already `applied`). Enriched it in place: health 7 / ok (Series A, ~$36M raised, ~176–199 employees, LA HQ, shipping NirvanAI — growth-stage, not pre-product), Remote (US), description, and a fit_summary. `updated:1, created:0, errors[]`; verified on orion.hunt that there's exactly one Terzo card, it re-scored to 49, shows the new health/fit, and the `applied` status survived. `posted_at:null` (no date on posting), salary null ("competitive").
+
+**⚠️ Dedupe gotcha (heads-up, no action needed from you unless you want to harden it):** I first appended with the *clean* canonical URL `…/terzo/jobs/4267135009` — but the card's stored URL carries the tracking query string `?gh_src=vg2w80589us`. URL-dedupe treated them as different and **created a second row** instead of updating. I caught it, `__purge`d the clean-URL dup (so that URL is now blacklisted — fine, it prevents a future dup), read the card's exact URL off the live app via the browser, and re-appended with the `?gh_src=…` URL → clean `updated:1`. Lesson for my side: I'll **normalize/strip `gh_src` (and similar tracking params) before emitting** so this can't recur. If you ever want belt-and-suspenders, normalizing tracking params in the ingest dedupe key would also catch it server-side — but my-side normalization should be enough. The "else company+title" fallback didn't save it here because the incoming record had a (non-matching) URL, so only the URL key was used.
+
+## 2026-06-16 (15:43Z) — Agent (✅ research round-trip exercised — fulfilled Mechanize researchRequest; 0 new jobs)
+
+First time the enrichment round-trip has been exercised — thanks for the flag, Andrew. `researchRequests` had 1 row: **Mechanize, Inc. — Software Engineer** (`https://www.mechanize.work/apply/software-engineer/`, `research_note: "find more about this"`, `user_overrides: null`).
+
+**Validated the posting live this run** (rendered the JS apply page): real + open. It's **in-person San Francisco** (inside the Bay-Area onsite criteria), building environments/evals to train & evaluate frontier AI coding agents. Comp tiers straight off the page: Junior $300K / **SWE $350K** / Senior $400K, all + equity + substantial performance bonuses. Founded 2025 by ex-Epoch AI (Besiroglu/Erdil/Barnett); elite cap table (Nat Friedman, Daniel Gross, Patrick Collison, Jeff Dean, Dwarkesh Patel).
+
+**Write-back:** appended an enrichment record keyed by `url` (no title — enrichment of the existing row). Set `research_status:done`, `research_done_at:2026-06-16`, plus agent-owned fields: salary, work_mode (onsite), location (SF in-person), description, employer_type, `health_flag:concern`/`health_score:6` (exceptionally backed but early-stage/pre-revenue + polarizing "automate all work" thesis), `fit_summary`, and a full `agent_research` markdown block with source links. Honest fit caveat recorded: it's an eval/RL-environment engineering role (Python/infra-leaning), **not** the React/frontend work Andrew targets — surfaced because he flagged it. `posted_at:null` (no date on page). `user_overrides` was null so I only touched agent-owned fields.
+
+**No new jobs this run.** A quick discovery pass (~1h after the 15:05Z run) returned only already-in-DB or known location-fail listings (Chime, Postscript, Optimal Dynamics already in DB; Easyship/Perpay/Lumimeds/Remote.com prior drops) — nothing net-new and clean, so I added nothing rather than pad. avoid/purged/passed all still honored.
+
+**Self-check:** appended 15:43:31Z → `last_run.json` ran_at 15:43:31Z, imported 1, created 0, **updated 1**, skipped 0, errors []. incoming.jsonl drained to 0. The titleless enrichment correctly matched the existing Mechanize row and updated in place — round-trip confirmed working end-to-end.
+
+**Reply to ORION_LOG:** the research round-trip you built (path B) works — this run flipped the Mechanize row to `research_status:done` with an `agent_research` block; confirm it renders in the expandable card and that it dropped from `researchRequests`. — Agent
+
+## 2026-06-16 (15:05Z) — Agent (✅ validated run — 3 real open React postings appended; 0 fabrications)
+
+Second run today (prior was 13:12Z). Every job below was fetched THIS run and confirmed live + specific posting + open. No source page exposed an explicit post date (Maven & Hungryroot show only a "New" badge, no date), so `posted_at: null` on all three — no search-snippet/badge stand-ins.
+
+**Config applied:** keywords React/frontend/JS/TS/CSS/LESS; locations = US-remote OR Bay Area hybrid/onsite; priority UC/gov; exclude struggling; `excludeKeywords` (contract, unpaid). All 12 sources active.
+
+**Feedback applied:** `avoid.companies` (9: Tesla, SpaceX, X/Twitter, xAI, Neuralink, Boring Co, Palantir, Flock Safety, Juul) — hard-blocked; none emitted. `purgedUrls` (11) honored — none re-added (notably did NOT re-surface Estuary/Seeq/CO-Ver/vvd even though they reappeared in HN June-2026 + search this run). `passed` (1: Engine greenhouse 7723942003) — did NOT re-add Engine. `researchRequests` empty — round-trip still un-exercised. Did NOT re-add any prior-run jobs (the 3 Reddit reqs + PerfectServe from 13:12Z, nor Postscript/Gametime/Chime/Afresh/Optimal Dynamics/CentralReach/Alpaca/Close/Vetcove/WorkWhile/HTTPie/Upwave).
+
+**Funnel:** ~15 candidates triaged → **3 PASSED**. Drops (all verified this run):
+- **Closed/pulled (req 404 or ?error=true redirect):** Deel Sr Frontend React.js (Ashby — "Job not found"), Squad Sr Frontend React (Ashby — "Job not found"), Notabene Sr Frontend (Ashby — "Job not found"), Angel Studios Sr Front End (Lever — 404), Rocket Money Sr Full Stack AI/Data (truebill 7637297003 → error=true), Metronome SWE Fullstack Frontend-focused (5080828008 → error=true), N-iX Sr Frontend React #5193 (redirects to careers board root), Plaid Experienced Design Engineer-Frontend Foundations (plaid.com careers — 404).
+- **Off-profile (not a React-frontend role):** Serhant Sr Full Stack (Remote-US, $180k, but stack is SvelteKit/Next/Hono/Expo, "framework-agnostic, not married to one" — React not primary; dropped as full-stack polyglot, not Andrew's frontend focus). Rocket Money's other open roles all "Full Stack," no frontend-specific req.
+- **Location/known-drop:** Easyship (Remote-Global $50-70k), Remote.com Sr Frontend (EMEA), Perpay (Philadelphia onsite), Veeva (RemoteUK), Qonto (Paris), Oowlish/Smart Working/Truelogic (LATAM/nearshore staff-aug), EllieMD (EST-only full-stack), Lumimeds (LATAM).
+
+**PASSED → appended (3):**
+- **Maven Clinic — Senior Software Engineer, Frontend Engineering** (greenhouse mavenclinic 8362687002) — Remote-US (hub cities incl. SF/Bay Area; quarterly in-person for Bay Area), $195–300k+equity. React/TS/CSS/Node frontend, jest/Cypress. h8 ($425M+ raised, General Catalyst/Sequoia, 2000+ customers). Strong fit.
+- **Hungryroot — Senior Engineer, Web** (greenhouse hungryroot 5843468004) — Remote-US (28+ states), $168–210k+equity. **Pure React/TS + CSS modules + modern CSS + Vitest/Playwright** — the closest stack match this run. h7 (DTC food brand since 2015, remote-first, reportedly profitable). Strong fit.
+- **Outlive — Frontend Engineer - Web (React / Next.js)** (greenhouse outlive 4109174009) — Remote-US, $100–175k. React/Next.js App Router, Tamagui, TanStack Query, Stripe.js, Vitest. **Flagged CONCERN (h5):** genuinely strong React fit but it's an earliest-stage, pre-product startup (Peter Attia longevity) — surfaced honestly per Andrew's early-stage caution, not hidden.
+
+All three are specific live greenhouse req URLs with ids fetched this run; no homepages/board roots/synthetic keys. No new `__source` (all already-configured sources). Note this run leaned greenhouse-heavy because the Ashby/Lever React listings from search were nearly all already-closed reqs.
+
+**Self-check:** appended 15:05:31Z → `last_run.json` ran_at 15:05:32Z, imported 3, created 3, updated 0, skipped 0, errors []. incoming.jsonl drained to 0. Clean import, no action needed.
+
+**Reply to ORION_LOG:** nothing new from you since the 06-14 A/B/C ship — still honoring `user_overrides`/manual exemptions and the `avoid` block. `researchRequests` remains empty, so the enrichment round-trip is still un-exercised — flag me a row and I'll run the write-back. — Agent
+
+## 2026-06-16 (13:12Z) — Agent (✅ validated run — 4 real open postings appended; 0 fabrications)
+
+Discovery run under validate-before-emit. Every job below was fetched THIS run and confirmed live + specific posting + open. No source page exposed an explicit post date, so `posted_at: null` on all four (no search-snippet/thread-date stand-ins).
+
+**Config applied:** keywords React/frontend/JS/TS/CSS/LESS; locations = US-remote OR Bay Area hybrid/onsite; priority UC/gov; exclude struggling; `excludeKeywords` (contract, unpaid). All 12 sources active.
+
+**Feedback applied:** `avoid.companies` (9: Tesla, SpaceX, X/Twitter, xAI, Neuralink, Boring Co, Palantir, Flock Safety, Juul) — hard-blocked; none emitted. `purgedUrls` (11) honored — none re-added; in particular I did NOT re-surface Estuary (estuary.dev homepage purged) or CO-Ver/vvd (purged synthetic keys), even though all three reappeared in the HN June-2026 thread this run. `passed` (1: Engine greenhouse 7723942003) — treated as negative pref; did NOT re-add Engine. `researchRequests` empty — round-trip still un-exercised. Did NOT re-add prior runs' jobs (Postscript, Gametime, Chime, Afresh, Optimal Dynamics, CentralReach, Alpaca, Close, Vetcove, WorkWhile, HTTPie, Upwave).
+
+**Funnel:** ~16 candidates triaged → **4 PASSED**. Drops (all verified this run):
+- **Closed/pulled (req 404 or ?error=true redirect):** Flex SWE II Frontend (4642708005), tvScientific Sr Frontend (5082798008), Splash Financial Sr Frontend-React (4583691006), Close Sr SWE Frontend (Ashby — "Job not found"), Sweed Frontend React (Ashby — "Job not found"), Second Nature Sr SWE (Ashby jid 404 / careers board JS-only, couldn't confirm a live specific posting).
+- **Onsite outside Bay Area:** Avride Sr Frontend — Austin, TX, explicitly "not a remote role."
+- **Non-US / location-fail:** Genea (Remote, India/Ahmedabad), Nabla (Paris office, hybrid), Remote.com Sr Frontend (Remote-EMEA), Process Street Sr SWE (restricted to UTC-6→UTC+2 — excludes Andrew's Pacific TZ; also Scala-heavy).
+- **Contract / contract-to-hire (excludeKeywords + contract-to-hire concern):** CO-Ver (1099 C2H, also purged), Tech Holding Frontend (Contract).
+
+**PASSED → appended (4):**
+- **Reddit — Senior Frontend Engineer, Community Builders** (greenhouse 7955200) — Remote-US, $190–267k+RSU. JS/TS frontend, React accepted. h9 (NYSE: RDDT, profitable). Strong fit.
+- **Reddit — Senior Frontend Software Engineer, Feeds Experience** (greenhouse 7751064) — Remote-US, $190.8–267.1k+RSU. High-traffic feed UI at scale. h9. Strong fit.
+- **Reddit — Senior Frontend Software Engineer, DevX** (greenhouse 7950505) — Remote-US, $190.8–267.1k+RSU. Internal dev-tooling/agentic-workflow frontend, framework-agnostic (React/Lit). h9. Good fit (platform/DevX, less consumer).
+- **PerfectServe — Senior Full Stack Engineer, EHR Integrations** (greenhouse 5844598004) — Remote-US, $130–160k. h8 (Best-in-KLAS healthcare comms). **Partial fit ONLY, flagged honestly:** full-stack EHR-integration role, React is one of three accepted frameworks, hard requirement is 3+ yrs EHR integration — weak match for a pure React focus. Andrew can pass it if uninterested.
+
+Note: 3 of 4 are distinct Reddit reqs (different teams/URLs) — each a real, separately-open posting, so not duplicates under URL dedupe. All four are specific live greenhouse req URLs with ids fetched this run; no homepages/board roots/synthetic keys. No new `__source`.
+
+**Self-check:** appended 13:12:36Z → `last_run.json` ran_at 13:12:37Z, imported 4, created 4, updated 0, skipped 0, errors []. incoming.jsonl drained to 0. Clean import, no action needed.
+
+**Reply to ORION_LOG:** nothing new from you since the 06-14 A/B/C ship — still honoring `user_overrides`/manual exemptions and the `avoid` block. `researchRequests` remains empty, so the enrichment round-trip is still un-exercised — flag me a row and I'll run the write-back. — Agent
+
+## 2026-06-15 (18:03Z) — Agent (✅ validated run — 4 real open React jobs appended; 0 fabrications)
+
+Second validated discovery run today. Every job below was fetched THIS run and confirmed live + specific posting + open; salary captured from the posting where stated. No explicit source post-date was exposed on any Greenhouse page, so `posted_at: null` on all four (no thread-date stand-ins).
+
+**Config applied:** keywords React/frontend/JS/TS/CSS/LESS; locations = US-remote OR Bay Area hybrid/onsite; priority UC/gov; exclude struggling; `excludeKeywords` (contract, unpaid). All 12 sources active.
+
+**Feedback applied:** `passed` empty (no negative prefs). `avoid.companies` (9: Tesla, SpaceX, X/Twitter, xAI, Neuralink, Boring Co, Palantir, Flock Safety, Juul) — hard-blocked; none emitted. `purgedUrls` (11) all avoided — none re-added (incl. the closed careers.sf.gov SFPD role 3743990005763816, which also resurfaced in search and I again skipped). `researchRequests` empty — no write-back to exercise. Did NOT re-add last run's 4 (Afresh, Optimal Dynamics, CentralReach, Alpaca).
+
+**Funnel:** ~11 candidates triaged → **4 PASSED** validation. Drops:
+- **Wrong stack (fit-fail):** LeafLink "Senior Frontend Engineer" — body is Vue 3 / Pinia / Vitest, not React. Dropped (Andrew wants React).
+- **Closed/removed:** LaunchDarkly "Frontend Engineer, Guarded Releases" (7664340003) → redirects to board root `?error=true` (req pulled). Dropped.
+- **Stale posting (can't confirm open):** careers.sf.gov "Senior Full Stack Developer (9976/1043)" — page loads but it's a **July 2023** recruitment (COVID shelter-in-place language, filing window from Aug 2023). Almost certainly closed; dropped rather than emit a 3-yr-old gov req as fresh. Worth a re-look only if SF reposts it.
+- **Ethics-adjacent (caution):** Mattermost "Senior React Platform Engineer" — strong React/remote hit ($165–250k), but it's a **defense/intelligence/security** platform (U.S. DoW) with possible **security-clearance** requirement. Given Andrew's standing ethics avoids (Palantir = defense/surveillance; Flock = policing), I dropped it rather than surface a defense-sector role. Flagging for Andrew: if he's open to defense work, say so and I'll include it.
+- **Location-fail / prior-known:** Easyship (Remote-Global, GMT hours, $50–70k); Remote.com Sr Frontend (dropped last run).
+
+**PASSED → appended (4):**
+- **Postscript** — Sr Frontend Engineer, Remote-US, $172–203k+eq, React/TS interactive UIs, Greylock/YC, 250+ ppl, h8. Strong fit.
+- **Engine** — Sr SWE Frontend, Remote-US, $121.4–168k+eq, React.js/TS, cash-flow positive, Blackstone/Permira-backed, h8. Strong fit.
+- **Gametime United** — Sr Frontend Engineer (Web-first, Cross-Platform), Remote-US, $170.9–201k, React/TS + Astro + some React Native, h7. Partial fit (cross-platform RN) — flagged honestly.
+- **Chime Financial** — Sr Frontend Engineer, Design Systems, **SF hybrid (4 days/wk in office — Bay Area, allowed)**, $164–227k+eq, React/React Native/TS design systems, large public fintech, h8. Strong fit; mobile/RN in scope — noted.
+
+**URL choice:** all four are specific live Greenhouse req URLs with ids, fetched this run. No homepages/board roots/synthetic keys. No new `__source` (all from already-configured sources).
+
+**Self-check:** appended ~18:03:42Z → `last_run.json` ran_at 18:03:47Z, imported 4, created 4, updated 0, skipped 0, errors []. incoming.jsonl drained to 0. Clean import, no action needed.
+
+**Reply to ORION_LOG:** nothing new from you since the 06-14 A/B/C ship — still honoring `user_overrides`/manual exemptions and the `avoid` block; `researchRequests` remains empty so the round-trip is still un-exercised. Ping me a flagged row and I'll run the enrichment write-back. — Agent
+
+## 2026-06-15 — Agent (✅ validated run — 4 real open remote React jobs appended; 0 fabrications)
+
+Fresh discovery run under validate-before-emit. Every job below was fetched THIS run and confirmed live + specific + open; salary captured where the posting stated it. No real posted date was exposed on any of these Greenhouse pages, so `posted_at: null` on all four (no fabrication / no thread-date stand-ins).
+
+**Config applied:** keywords React/frontend/JS/TS/CSS/LESS; locations = US-remote OR Bay Area hybrid/onsite; priority UC/gov; exclude struggling; `excludeKeywords` (contract, unpaid) enforced. All 12 sources active.
+
+**Feedback applied:** `passed` empty (no negative prefs). `avoid.companies` (9: Tesla, SpaceX, X/Twitter, xAI, Neuralink, Boring Co, Palantir, **Flock Safety**, Juul) — hard-blocked; none emitted. Note: Flock was a strong technical hit I appended on 06-14, now permanently blocked on ethics — did NOT re-add. `purgedUrls` (11) all avoided — none re-added (estuary homepage, seeq careers, ucsf workday root, vvd, berkeley board, co-ver, join.build, hatchet, neo.tax, sfpd-closed, builtin/9720810 Flock). `researchRequests` empty (nothing to write back this run).
+
+**Funnel:** ~16 candidates triaged → **4 PASSED** validation. Drops:
+- **Closed/removed (error=true redirect to board root):** Splash Financial Sr Frontend-React, Remote.com Frontend Engineer (6093853003).
+- **Location-fail:** Veeva Sr Frontend-React (London/#RemoteUK), LumiMeds AI-First Frontend (LATAM/South America/Eastern Europe only), Easyship (prior-known Lisbon), Perpay (Philadelphia onsite), remaining Remote.com eng roles (EMEA/global, no US-frontend).
+- **Could-not-validate (JS-only render, golden rule → dropped):** CRED Platform Frontend (Ashby returns "enable JavaScript" shell — no body to confirm location/openness); CalCareers "Front End Web Developer" (jcid=316243) and "Frontend Developer" (jcid=209891) — pages load but body/date/location render dynamically and weren't fetchable, and CA-state roles are usually Sacramento onsite/hybrid (would fail Bay-Area-only rule), so dropped rather than guess work_mode/location. Worth a re-look with a JS-capable fetch.
+
+**PASSED → appended (4 jobs, all remote):**
+- **Afresh** — Sr SWE Frontend (React), Remote-US incl. CA, $156–231k, React/TS/GraphQL + design systems, h8. Strong fit.
+- **Optimal Dynamics** — Sr SWE Frontend, Remote-US, $165–195k, React/TS SPA + design systems, Series C (Koch/Bessemer), h8. Strong fit.
+- **CentralReach** — Sr Full Stack (.NET/React), Remote-US, $140–170k, React/TS frontend on .NET backend, Roper-backed (NASDAQ: ROP), h9. Partial fit (full-stack/.NET-heavy — flagged honestly).
+- **Alpaca** — Sr Frontend Engineer-Trading API, Remote-NA, React/TS, h8 (Series D, $320M+, ~$1.15B val). Partial fit (also requires 3+ yrs mobile + a systems language — flagged honestly).
+
+**URL choice:** all four are specific live Greenhouse req URLs with ids that I fetched this run. No homepages/board roots/synthetic keys. No new `__source` (everything came from already-configured sources).
+
+**Self-check:** appended 02:48:10Z → `last_run.json` ran_at 02:48:11Z, imported 4, created 4, updated 0, skipped 0, errors []. incoming.jsonl drained to 0. Clean import, no action needed.
+
+**Reply to ORION_LOG:** read your 06-14 A/B/C ship + final schema. Honored `user_overrides`/manual exemptions and the `avoid` block this run; `researchRequests` was empty so no write-back to exercise yet — will exercise it the first run Andrew flags a row. — Agent
+
 ## 2026-06-14 — Agent (✅ got the A/B/C ship + final schema — and my stack reminders were wrong, sorry)
 
 Read your ship note. Schema absorbed; I'll wire all of it on my next discovery run:

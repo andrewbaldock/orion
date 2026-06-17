@@ -15,6 +15,34 @@ const BAY_AREA = [
 
 const REACT_TERMS = ["react", "frontend", "front-end", "front end", "javascript", "css", "less", "ui engineer", "web developer"];
 
+// Pull the TOP of a pay range out of free-text salary, in USD/year. Salary is a
+// free-form TEXT field ("142000-210000 USD/year", "$150k–$175k", "$120k"), so we
+// scan for dollar figures, expand "k" to thousands, and take the largest (the top
+// of the band — Andrew's floor is "the most this could pay me"). Returns null when
+// there's no parseable figure (don't penalize unknown comp) or when the number
+// looks like an hourly/monthly rate. Exported for testing.
+export function parseTopSalary(salary) {
+  if (!salary || typeof salary !== "string") return null;
+  const s = salary.toLowerCase();
+  if (/\b(hour|hr|hourly|month|monthly)\b|\/\s*(hr|hour|mo|month)/.test(s)) return null;
+  const nums = [];
+  // Match figures like 175,000 / 175000 / 175k / 1.5k — with optional $ and commas.
+  const re = /\$?\s*(\d[\d,]*\.?\d*)\s*(k\b|thousand|m\b|million)?/g;
+  let m;
+  while ((m = re.exec(s))) {
+    let n = parseFloat(m[1].replace(/,/g, ""));
+    if (isNaN(n)) continue;
+    const unit = m[2];
+    if (unit === "k" || unit === "thousand") n *= 1000;
+    else if (unit === "m" || unit === "million") n *= 1_000_000;
+    // Bare figures without a unit that are plainly too small to be an annual salary
+    // (e.g. "2" from "2 days") are noise — only count >= 1000 or anything with a unit.
+    if (n >= 1000 || unit) nums.push(n);
+  }
+  if (!nums.length) return null;
+  return Math.max(...nums);
+}
+
 export function scoreJob(job) {
   const reasons = [];
   let score = 0;
@@ -66,6 +94,26 @@ export function scoreJob(job) {
     score -= 100; reasons.push("Struggling/shaky employer — EXCLUDED (-100)");
   } else if (job.health_flag === "concern") {
     score -= 25; reasons.push("Health concern flagged (-25)");
+  }
+
+  // 5b) Comp floor. Penalize roles whose top-of-range is clearly below Andrew's
+  // minSalary (passed in from searchProfile). "Clearly" = below 95% of the floor, so
+  // a role that just grazes it isn't dinged for rounding. Unparseable/absent comp is
+  // NOT penalized (we don't punish unknowns). minSalary 0/null disables the term.
+  const floor = Number(job.minSalary) || 0;
+  if (floor > 0) {
+    const top = parseTopSalary(job.salary);
+    if (top != null && top < floor * 0.95) {
+      score -= 30; reasons.push(`Top of pay range ($${Math.round(top / 1000)}k) below your $${Math.round(floor / 1000)}k floor (-30)`);
+    }
+  }
+
+  // 6) Andrew's "⭐ I like them" boost — a user-owned positive signal, the mirror
+  // of the avoid/pass penalties. Symmetric in magnitude to the concern penalty so
+  // a liked role clearly floats above a comparable un-liked one without nuking the
+  // rest of the ranking. liked is preserved across agent refreshes (see ingest).
+  if (job.liked) {
+    score += 30; reasons.push("⭐ You like this employer (+30)");
   }
 
   return { score: Math.round(score), reasons };

@@ -3,7 +3,7 @@ import { api } from "../api.js";
 
 // Manual "+ Add listing" — for jobs Andrew already applied to, or ones slurp couldn't
 // pull. Posts with source:"manual" (exempt from auto-purge). url is optional.
-const FIELDS = ["title", "company", "location", "work_mode", "salary", "url", "description"];
+const FIELDS = ["title", "company", "location", "work_mode", "salary", "url", "direct_url", "description"];
 
 export default function AddListing({ onAdded }) {
   const [open, setOpen] = useState(false);
